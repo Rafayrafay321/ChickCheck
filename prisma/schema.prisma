@@ -1,0 +1,177 @@
+// Dukaan POS — Local SQLite Schema (Source of Truth)
+// All data lives here first. Cloud is a backup/read layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── OWNER / AUTH ────────────────────────────────────────────────
+model Owner {
+  id        String   @id @default(cuid())
+  name      String
+  shopName  String
+  phone     String?
+  password  String   // bcrypt hashed
+  createdAt DateTime @default(now())
+
+  @@map("owner")
+}
+
+// ─── CUSTOMERS ───────────────────────────────────────────────────
+model Customer {
+  id          String    @id @default(cuid())
+  name        String
+  type        String    // 'RESTAURANT' | 'RETAIL'
+  phone       String?
+  address     String?
+  totalUdhaar Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  syncedAt    DateTime?
+
+  orders   Order[]
+  invoices Invoice[]
+  payments Payment[]
+
+  @@map("customers")
+}
+
+// ─── PRODUCTS ────────────────────────────────────────────────────
+model Product {
+  id           String    @id @default(cuid())
+  name         String
+  nameUrdu     String?
+  unit         String    // 'kg' | 'piece'
+  pricePerUnit Float
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  syncedAt     DateTime?
+
+  orderItems   OrderItem[]
+  stockEntries StockEntry[]
+
+  @@map("products")
+}
+
+// ─── STOCK ENTRIES ───────────────────────────────────────────────
+// Immutable ledger — never update, only insert
+// Current stock = SUM(IN) - SUM(OUT) per product
+model StockEntry {
+  id        String    @id @default(cuid())
+  productId String
+  product   Product   @relation(fields: [productId], references: [id])
+  type      String    // 'IN' | 'OUT'
+  quantity  Float
+  note      String?
+  entryDate DateTime  @default(now())
+  createdAt DateTime  @default(now())
+  syncedAt  DateTime?
+
+  @@map("stock_entries")
+}
+
+// ─── ORDERS ──────────────────────────────────────────────────────
+model Order {
+  id          String    @id @default(cuid())
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id])
+  status      String    @default("PENDING") // 'PENDING' | 'DELIVERED' | 'CANCELLED'
+  totalAmount Float     @default(0)
+  note        String?
+  orderDate   DateTime  @default(now())
+  deliveredAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  syncedAt    DateTime?
+
+  items   OrderItem[]
+  invoice Invoice?
+
+  @@map("orders")
+}
+
+// ─── ORDER ITEMS ─────────────────────────────────────────────────
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Float
+  unitPrice Float    // price at time of order — never live price
+  total     Float    // quantity * unitPrice
+  createdAt DateTime @default(now())
+  syncedAt  DateTime?
+
+  @@map("order_items")
+}
+
+// ─── INVOICES ────────────────────────────────────────────────────
+model Invoice {
+  id          String    @id @default(cuid())
+  orderId     String    @unique
+  order       Order     @relation(fields: [orderId], references: [id])
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id])
+  totalAmount Float
+  paidAmount  Float     @default(0)
+  status      String    @default("UNPAID") // 'UNPAID' | 'PARTIAL' | 'PAID'
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  syncedAt    DateTime?
+
+  payments Payment[]
+
+  @@map("invoices")
+}
+
+// ─── PAYMENTS ────────────────────────────────────────────────────
+model Payment {
+  id         String    @id @default(cuid())
+  invoiceId  String
+  invoice    Invoice   @relation(fields: [invoiceId], references: [id])
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  amount     Float
+  method     String    @default("CASH") // 'CASH' | 'JAZZCASH' | 'EASYPAISA' | 'BANK'
+  note       String?
+  paidAt     DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  syncedAt   DateTime?
+
+  @@map("payments")
+}
+
+// ─── END OF DAY ──────────────────────────────────────────────────
+model EndOfDay {
+  id                String    @id @default(cuid())
+  reportDate        DateTime  @unique // one per day
+  openingStockKg    Float
+  closingStockKg    Float
+  retailCashDrawer  Float
+  restaurantSales   Float
+  retailCalculated  Float
+  discrepancy       Float
+  note              String?
+  createdAt         DateTime  @default(now())
+  syncedAt          DateTime?
+
+  @@map("end_of_day")
+}
+
+// ─── SYNC LOG ────────────────────────────────────────────────────
+model SyncLog {
+  id            String   @id @default(cuid())
+  syncedAt      DateTime @default(now())
+  recordsPushed Int?
+  status        String   // 'SUCCESS' | 'FAILED'
+  error         String?
+
+  @@map("sync_log")
+}

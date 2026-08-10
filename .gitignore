@@ -1,40 +1,39 @@
 ### AL ###
 #Template for AL projects for Dynamics 365 Business Central
-#launch.json folder
 .vscode/
-#Cache folder
 .alcache/
-#Symbols folder
 .alpackages/
-#Snapshots folder
 .snapshots/
-#Testing Output folder
 .output/
-#Extension App-file
 *.app
-#Rapid Application Development File
 rad.json
-#Translation Base-file
 *.g.xlf
-#License-files
 *.bclicense
 *.flf
-#Test results file
 TestResults.xml
 /src/generated/prisma
 
-# Dependencies & Build Cache
+# Dependencies & Build Output
 node_modules/
 .next/
 out/
 build/
 dist/
+*.tsbuildinfo
 
-# SQLite Database & Environment
+# SQLite Database & Secrets / Environment
 *.db
 *.db-journal
 .env
 .env*.local
+
+# AI Agent & IDE Configuration Directories / Skill Locks
+.agents/
+.claude/
+.windsurf/
+.antigravity/
+.gemini/
+skills-lock.json
 
 # OS Files
 .DS_Store

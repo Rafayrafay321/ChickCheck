@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { DailyRateBanner } from '@/components/layout/DailyRateBanner'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -22,32 +23,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.replace('/login')
   }
 
-  // Don't render until auth is verified
   if (!shopName) return null
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div className="flex h-screen overflow-hidden bg-bg text-text-primary">
       <Sidebar shopName={shopName} />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <header style={{
-          height: '56px', backgroundColor: 'var(--color-card)',
-          borderBottom: '1px solid var(--color-border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-          padding: '0 24px', gap: '16px',
-        }}>
-          <button onClick={handleLogout} style={{
-            padding: '6px 16px', fontSize: '0.8rem', color: 'var(--color-text-secondary)',
-            backgroundColor: 'transparent', border: '1px solid var(--color-border)',
-            borderRadius: '6px', cursor: 'pointer',
-          }}>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="h-14 bg-card border-b border-border flex items-center justify-between px-6 gap-4">
+          <div className="flex flex-1 items-center">
+            <DailyRateBanner />
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="px-4 py-1.5 text-xs text-text-secondary bg-transparent border border-border rounded-md hover:bg-bg transition-colors cursor-pointer"
+          >
             Logout
           </button>
         </header>
 
-        <main style={{
-          flex: 1, overflow: 'auto', padding: '24px', backgroundColor: 'var(--color-bg)',
-        }}>
+        <main className="flex-1 overflow-auto p-6 bg-bg">
           {children}
         </main>
       </div>

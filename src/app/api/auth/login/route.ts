@@ -10,7 +10,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Koi account nahi mila — pehle setup karo' })
     }
 
-    const isMatch = await bcrypt.compare(password, owner.password)
+    // Handle plain text passwords for development seeding, otherwise check hash
+    const isMatch = owner.password.startsWith('$2') 
+      ? await bcrypt.compare(password, owner.password)
+      : password === owner.password
+
     if (!isMatch) {
       return NextResponse.json({ success: false, error: 'Galat Password' })
     }

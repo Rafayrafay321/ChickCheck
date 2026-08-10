@@ -1,36 +1,55 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-// PATCH — update order status. If DELIVERED → auto-deduct stock.
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
-    const { status } = await request.json() as { status: string }
+    const params = await context.params
+    const { id } = params
+    
+    const body = await request.json()
+    const { status } = body
 
-    if (status === 'DELIVERED') {
-      await db.$transaction(async (tx) => {
-        const order = await tx.order.findUnique({ where: { id }, include: { items: true } })
-        if (!order) throw new Error('Order nahi mila')
+    if (!['PENDING', 'DELIVERED', 'CANCELLED'].includes(status)) {
+      return NextResponse.json({ success: false, error: 'Status sahi nahi hai' })
+    }
 
-        await tx.order.update({ where: { id }, data: { status, deliveredAt: new Date() } })
+    const order = await db.order.findUnique({
+      where: { id },
+      include: { items: true }
+    })
 
+    if (!order) {
+      return NextResponse.json({ success: false, error: 'Order nahi mila' }, { status: 404 })
+    }
+
+    // Business Logic: Only deduct stock when moving to DELIVERED
+    // If order was already delivered, do nothing to prevent double deduction.
+    const isNewDelivery = status === 'DELIVERED' && order.status !== 'DELIVERED'
+
+    await db.$transaction(async (tx) => {
+      // 1. Update order status
+      await tx.order.update({
+        where: { id },
+        data: { 
+          status, 
+          deliveredAt: status === 'DELIVERED' ? new Date() : null 
+        }
+      })
+
+      // 2. Deduct stock if newly delivered
+      if (isNewDelivery) {
         for (const item of order.items) {
           await tx.stockEntry.create({
             data: {
               productId: item.productId,
               type: 'OUT',
               quantity: item.quantity,
-              note: `Order ${id}`
+              note: `Order #${order.id.slice(-6).toUpperCase()} deliver hua`
             }
           })
         }
-      })
-    } else {
-      await db.order.update({ where: { id }, data: { status } })
-    }
+      }
+    })
 
     return NextResponse.json({ success: true })
   } catch (e) {

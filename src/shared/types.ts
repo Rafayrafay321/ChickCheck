@@ -18,7 +18,7 @@ export interface OwnerSetupInput {
 
 export interface CustomerInput {
   name: string
-  type: 'RESTAURANT' | 'RETAIL'
+  type: 'RESTAURANT' | 'RETAIL' | 'WHOLESALE'
   phone?: string
   address?: string
 }
@@ -27,7 +27,39 @@ export interface ProductInput {
   name: string
   nameUrdu?: string
   unit: 'kg' | 'piece'
+  pricingType?: 'MULTIPLIER' | 'FIXED'
+  defaultMultiplier?: number
   pricePerUnit: number
+}
+
+
+export interface DailyRateInput {
+  farmRate: number
+  supplierPremium?: number
+}
+
+export interface SupplierPurchaseInput {
+  supplierName: string
+  grossWeight: number
+  dudWeight?: number
+  cashPaid?: number
+}
+
+export interface CustomerMultiplierInput {
+  customerId: string
+  productId: string
+  multiplier: number
+}
+
+export interface ExpenseInput {
+  category: 'PETROL' | 'BAGS' | 'BIKE' | 'PUNCHER' | 'POLICE' | 'LUNCH' | 'WAGES' | 'OTHER'
+  amount: number
+  note?: string
+}
+
+export interface StockAuditInput {
+  productId: string
+  closingKg: number
 }
 
 export interface StockEntryInput {
@@ -43,7 +75,6 @@ export interface CreateOrderInput {
   items: Array<{
     productId: string
     quantity: number
-    unitPrice: number
   }>
 }
 
@@ -57,13 +88,9 @@ export interface RecordPaymentInput {
 
 export interface EndOfDayInput {
   reportDate: string
-  openingStockKg: number
-  closingStockKg: number
   retailCashDrawer: number
-  restaurantSales: number
-  retailCalculated: number
-  discrepancy: number
   note?: string
+  audits?: StockAuditInput[]
 }
 
 export interface OrderFilters {

@@ -9,6 +9,8 @@ datasource db {
   provider = "sqlite"
 }
 
+
+
 // ─── OWNER / AUTH ────────────────────────────────────────────────
 model Owner {
   id        String   @id @default(cuid())
@@ -21,56 +23,125 @@ model Owner {
   @@map("owner")
 }
 
+// ─── DAILY RATE ──────────────────────────────────────────────────
+model DailyRate {
+  id              String   @id @default(cuid())
+  date            DateTime @unique
+  farmRate        Float
+  supplierPremium Float    @default(4)
+  supplyRate      Float    // farmRate + supplierPremium
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("daily_rates")
+}
+
+// ─── SUPPLIER PURCHASES (ZINDA MURGI) ───────────────────────────
+model SupplierPurchase {
+  id           String   @id @default(cuid())
+  supplierName String
+  grossWeight  Float
+  dudWeight    Float    @default(0) // Mortality / deduction in kg
+  netWeight    Float    // grossWeight - dudWeight
+  ratePerKg    Float    // purchasing rate (supplyRate)
+  totalAmount  Float    // netWeight * ratePerKg
+  cashPaid     Float    @default(0)
+  purchaseDate DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@map("supplier_purchases")
+}
+
 // ─── CUSTOMERS ───────────────────────────────────────────────────
 model Customer {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  type        String    // 'RESTAURANT' | 'RETAIL'
+  type        String   // 'RESTAURANT' | 'RETAIL' | 'WHOLESALE'
   phone       String?
   address     String?
-  totalUdhaar Float     @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  syncedAt    DateTime?
+  totalUdhaar Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  orders   Order[]
-  invoices Invoice[]
-  payments Payment[]
+  orders      Order[]
+  invoices    Invoice[]
+  payments    Payment[]
+  multipliers CustomerMultiplier[]
 
   @@map("customers")
 }
 
 // ─── PRODUCTS ────────────────────────────────────────────────────
 model Product {
-  id           String    @id @default(cuid())
-  name         String
-  nameUrdu     String?
-  unit         String    // 'kg' | 'piece'
-  pricePerUnit Float
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  syncedAt     DateTime?
+  id                String   @id @default(cuid())
+  name              String
+  nameUrdu          String?
+  unit              String   @default("kg") // 'kg' | 'piece'
+  pricingType       String   @default("MULTIPLIER") // 'MULTIPLIER' | 'FIXED'
+  defaultMultiplier Float?   // e.g. 1.5 for Meat, 2.0 for Boneless, 1.6 for Tikka
+  pricePerUnit      Float    @default(0) // Fixed daily price if pricingType === 'FIXED'
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   orderItems   OrderItem[]
   stockEntries StockEntry[]
+  multipliers  CustomerMultiplier[]
+  stockAudits  DailyStockAudit[]
 
   @@map("products")
 }
 
-// ─── STOCK ENTRIES ───────────────────────────────────────────────
-// Immutable ledger — never update, only insert
-// Current stock = SUM(IN) - SUM(OUT) per product
-model StockEntry {
-  id        String    @id @default(cuid())
+// ─── CUSTOMER MULTIPLIER OVERRIDES ──────────────────────────────
+model CustomerMultiplier {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  multiplier Float    // e.g. 1.45 for Customer X on Meat
+
+  @@unique([customerId, productId])
+  @@map("customer_multipliers")
+}
+
+// ─── EXPENSES ────────────────────────────────────────────────────
+model Expense {
+  id        String   @id @default(cuid())
+  category  String   // 'PETROL' | 'BAGS' | 'BIKE' | 'PUNCHER' | 'POLICE' | 'LUNCH' | 'WAGES' | 'OTHER'
+  amount    Float
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@map("expenses")
+}
+
+// ─── DAILY STOCK AUDIT ───────────────────────────────────────────
+model DailyStockAudit {
+  id        String   @id @default(cuid())
   productId String
-  product   Product   @relation(fields: [productId], references: [id])
-  type      String    // 'IN' | 'OUT'
+  product   Product  @relation(fields: [productId], references: [id])
+  auditDate DateTime
+  openingKg Float    @default(0)
+  inKg      Float    @default(0)
+  outKg     Float    @default(0)
+  closingKg Float    @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("daily_stock_audits")
+}
+
+// ─── STOCK ENTRIES ───────────────────────────────────────────────
+model StockEntry {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  type      String   // 'IN' | 'OUT'
   quantity  Float
   note      String?
-  entryDate DateTime  @default(now())
-  createdAt DateTime  @default(now())
-  syncedAt  DateTime?
+  entryDate DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@map("stock_entries")
 }
@@ -87,7 +158,6 @@ model Order {
   deliveredAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  syncedAt    DateTime?
 
   items   OrderItem[]
   invoice Invoice?
@@ -103,10 +173,9 @@ model OrderItem {
   productId String
   product   Product  @relation(fields: [productId], references: [id])
   quantity  Float
-  unitPrice Float    // price at time of order — never live price
+  unitPrice Float    // price at time of order — calculated via multiplier * supplyRate
   total     Float    // quantity * unitPrice
   createdAt DateTime @default(now())
-  syncedAt  DateTime?
 
   @@map("order_items")
 }
@@ -124,7 +193,6 @@ model Invoice {
   dueDate     DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  syncedAt    DateTime?
 
   payments Payment[]
 
@@ -133,34 +201,35 @@ model Invoice {
 
 // ─── PAYMENTS ────────────────────────────────────────────────────
 model Payment {
-  id         String    @id @default(cuid())
+  id         String   @id @default(cuid())
   invoiceId  String
-  invoice    Invoice   @relation(fields: [invoiceId], references: [id])
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id])
   customerId String
-  customer   Customer  @relation(fields: [customerId], references: [id])
+  customer   Customer @relation(fields: [customerId], references: [id])
   amount     Float
-  method     String    @default("CASH") // 'CASH' | 'JAZZCASH' | 'EASYPAISA' | 'BANK'
+  method     String   @default("CASH") // 'CASH' | 'JAZZCASH' | 'EASYPAISA' | 'BANK'
   note       String?
-  paidAt     DateTime  @default(now())
-  createdAt  DateTime  @default(now())
-  syncedAt   DateTime?
+  paidAt     DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   @@map("payments")
 }
 
 // ─── END OF DAY ──────────────────────────────────────────────────
 model EndOfDay {
-  id                String    @id @default(cuid())
-  reportDate        DateTime  @unique // one per day
-  openingStockKg    Float
-  closingStockKg    Float
-  retailCashDrawer  Float
-  restaurantSales   Float
-  retailCalculated  Float
-  discrepancy       Float
-  note              String?
-  createdAt         DateTime  @default(now())
-  syncedAt          DateTime?
+  id               String   @id @default(cuid())
+  reportDate       DateTime @unique // one per day
+  farmRate         Float?
+  supplyRate       Float?
+  totalSales       Float    @default(0)
+  totalPurchases   Float    @default(0)
+  totalExpenses    Float    @default(0)
+  grossProfit      Float    @default(0)
+  netProfit        Float    @default(0)
+  retailCashDrawer Float    @default(0)
+  discrepancy      Float    @default(0)
+  note             String?
+  createdAt        DateTime @default(now())
 
   @@map("end_of_day")
 }

@@ -22,3 +22,20 @@ rad.json
 #Test results file
 TestResults.xml
 /src/generated/prisma
+
+# Dependencies & Build Cache
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# SQLite Database & Environment
+*.db
+*.db-journal
+.env
+.env*.local
+
+# OS Files
+.DS_Store
+Thumbs.db

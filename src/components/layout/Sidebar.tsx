@@ -22,7 +22,6 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/end-of-day', label: 'End of Day', labelUrdu: 'Din Khatam', emoji: '📊' },
 ] as const
 
-
 interface SidebarProps {
   shopName: string
 }
@@ -31,36 +30,41 @@ export function Sidebar({ shopName }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="w-60 min-h-screen bg-sidebar text-white flex flex-col">
-      <div className="p-6 border-b border-white/10">
-        <h1 className="text-xl font-bold m-0">🐔 {shopName}</h1>
-        <p className="text-xs text-text-secondary mt-1">Dukaan POS</p>
+    <aside className="w-64 min-h-screen bg-sidebar flex flex-col shrink-0">
+      {/* Brand */}
+      <div className="px-6 py-6 border-b border-white/[0.08]">
+        <h1 className="text-lg font-bold text-white tracking-tight m-0">🐔 {shopName}</h1>
+        <p className="text-[0.7rem] text-slate-400 mt-1 font-medium">Dukaan POS System</p>
       </div>
 
-      <nav className="flex-1 p-2 space-y-0.5">
+      {/* Navigation */}
+      <nav className="flex-1 py-4 pr-3 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.path
           return (
             <Link
               key={item.path}
               href={item.path}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors min-h-11 ${
+              className={`group flex items-center gap-3.5 px-4 py-2.5 text-sm transition-all ${
                 isActive
-                  ? 'bg-primary text-white font-semibold'
-                  : 'text-white/70 hover:bg-white/5 hover:text-white font-normal'
+                  ? 'bg-white/10 text-white border-l-4 border-blue-500 rounded-r-lg font-medium shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5 border-l-4 border-transparent rounded-r-lg'
               }`}
             >
-              <span className="text-lg">{item.emoji}</span>
-              <div>
-                <div>{item.label}</div>
-                <div className="text-[0.7rem] opacity-60">{item.labelUrdu}</div>
+              <span className="text-base shrink-0">{item.emoji}</span>
+              <div className="min-w-0">
+                <div className="truncate font-medium">{item.label}</div>
+                <div className={`text-[0.7rem] truncate ${isActive ? 'text-slate-200 font-medium' : 'text-slate-400'}`}>
+                  {item.labelUrdu}
+                </div>
               </div>
             </Link>
           )
         })}
       </nav>
 
-      <div className="p-5 border-t border-white/10 text-xs text-white/50">
+      {/* Footer */}
+      <div className="px-6 py-4 border-t border-white/[0.08] text-[0.7rem] text-slate-400 font-medium">
         ☁️ Sync: Not connected
       </div>
     </aside>

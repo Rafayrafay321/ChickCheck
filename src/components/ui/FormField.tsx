@@ -1,6 +1,6 @@
 // ─── FormField Component ─────────────────────────────────────────
 // Label + input/select/textarea + error message wrapper.
-// Ensures consistent spacing, sizing, and error styling across all forms.
+// Pure Tailwind — no inline style objects.
 
 import { type InputHTMLAttributes, type SelectHTMLAttributes } from 'react'
 
@@ -22,65 +22,43 @@ interface SelectFieldProps extends BaseFieldProps, SelectHTMLAttributes<HTMLSele
 
 type FormFieldProps = InputFieldProps | SelectFieldProps
 
-const fieldStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 12px',
-  fontSize: '0.9rem',
-  border: '1px solid var(--color-border)',
-  borderRadius: '8px',
-  backgroundColor: '#fff',
-  color: 'var(--color-text-primary)',
-  outline: 'none',
-  transition: 'border-color 0.15s ease',
-  minHeight: '44px',
-  boxSizing: 'border-box',
-}
+const inputClasses =
+  'w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 min-h-11'
+
+const errorInputClasses =
+  'w-full rounded-lg border border-red-400 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 min-h-11'
 
 export function FormField(props: FormFieldProps) {
   const { label, error, required, hint, as = 'input', ...rest } = props
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div className="flex flex-col gap-1.5">
       {label !== undefined && (
-        <label style={{
-          fontSize: '0.8rem', fontWeight: 600,
-          color: 'var(--color-text-primary)',
-        }}>
+        <label className="text-sm font-medium text-slate-700">
           {label}
-          {required && <span style={{ color: 'var(--color-danger)', marginLeft: '4px' }}>*</span>}
+          {required && <span className="ml-1 text-red-500">*</span>}
         </label>
       )}
 
       {as === 'select' ? (
         <select
           {...(rest as SelectHTMLAttributes<HTMLSelectElement>)}
-          style={{
-            ...fieldStyle,
-            borderColor: error ? 'var(--color-danger)' : 'var(--color-border)',
-            cursor: 'pointer',
-          }}
+          className={`${error ? errorInputClasses : inputClasses} cursor-pointer appearance-none`}
         >
           {(props as SelectFieldProps).children}
         </select>
       ) : (
         <input
           {...(rest as InputHTMLAttributes<HTMLInputElement>)}
-          style={{
-            ...fieldStyle,
-            borderColor: error ? 'var(--color-danger)' : 'var(--color-border)',
-          }}
+          className={error ? errorInputClasses : inputClasses}
         />
       )}
 
       {hint && !error && (
-        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-          {hint}
-        </span>
+        <span className="text-xs text-slate-400">{hint}</span>
       )}
       {error && (
-        <span style={{ fontSize: '0.75rem', color: 'var(--color-danger)', fontWeight: 500 }}>
-          ⚠ {error}
-        </span>
+        <span className="text-xs font-medium text-red-500">⚠ {error}</span>
       )}
     </div>
   )

@@ -19,17 +19,17 @@ export function DailyRateBanner() {
 
   return (
     <>
-      <div className="flex items-center gap-3 text-xs font-medium px-3 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-500">
+      <div className="inline-flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-xs font-medium text-amber-700">
         {loading ? (
-          <span>Rate load ho raha hai...</span>
+          <span className="text-amber-500">Rate load ho raha hai...</span>
         ) : dailyRate ? (
           <>
             <span>🐔 <strong>Farm Rate:</strong> Rs {dailyRate.farmRate}/kg</span>
-            <span className="opacity-60">|</span>
+            <span className="text-amber-300">|</span>
             <span>🚚 <strong>Supply Rate (+{dailyRate.supplierPremium}):</strong> Rs {dailyRate.supplyRate}/kg</span>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="ml-2 px-2 py-0.5 text-[0.75rem] cursor-pointer rounded border border-current bg-transparent hover:bg-amber-500/20 transition-colors"
+              className="ml-1 rounded-md border border-amber-300 bg-white px-2 py-0.5 text-[0.7rem] font-medium text-amber-600 shadow-sm transition-all hover:bg-amber-50 active:scale-[0.98] cursor-pointer"
             >
               Edit Rate
             </button>
@@ -39,7 +39,7 @@ export function DailyRateBanner() {
             <span>⚠️ <strong>Aaj Ka Rate Missing Hai!</strong></span>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="ml-2 px-2.5 py-0.5 text-[0.75rem] font-semibold cursor-pointer rounded bg-amber-500 text-black border-none hover:bg-amber-400 transition-colors"
+              className="ml-1 rounded-md bg-amber-500 px-2.5 py-0.5 text-[0.7rem] font-semibold text-white shadow-sm transition-all hover:bg-amber-600 active:scale-[0.98] cursor-pointer border-none"
             >
               + Rate Enter Karein
             </button>

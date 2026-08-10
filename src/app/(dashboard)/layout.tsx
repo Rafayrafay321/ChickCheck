@@ -26,24 +26,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!shopName) return null
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bg text-text-primary">
+    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
       <Sidebar shopName={shopName} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="h-14 bg-card border-b border-border flex items-center justify-between px-6 gap-4">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 gap-4 shrink-0">
           <div className="flex flex-1 items-center">
             <DailyRateBanner />
           </div>
 
           <button
             onClick={handleLogout}
-            className="px-4 py-1.5 text-xs text-text-secondary bg-transparent border border-border rounded-md hover:bg-bg transition-colors cursor-pointer"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-700 active:scale-[0.98] cursor-pointer"
           >
             Logout
           </button>
         </header>
 
-        <main className="flex-1 overflow-auto p-6 bg-bg">
+        <main className="flex-1 overflow-auto bg-slate-50 p-6 md:p-8">
           {children}
         </main>
       </div>

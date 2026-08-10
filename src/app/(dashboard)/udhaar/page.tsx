@@ -118,49 +118,51 @@ export default function UdhaarPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold m-0 text-text-primary">📒 Khata (Udhaar Overview)</h2>
-          <p className="text-text-secondary mt-1 text-sm">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">📒 Khata (Udhaar Overview)</h2>
+          <p className="text-sm text-slate-500 mt-1">
             Grahakon ka baki udhaar dekhain aur payment record karein
           </p>
         </div>
       </div>
 
       {/* Summary Card */}
-      <div className="p-5 rounded-xl bg-card border border-border flex items-center justify-between flex-wrap gap-4 shadow-sm">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center justify-between flex-wrap gap-4">
         <div>
-          <span className="text-xs font-medium text-text-secondary">Kul Wusool Talab Udhaar (Total Balance):</span>
-          <div className="text-2xl font-bold text-red-500 mt-1">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
+            Kul Wusool Talab Udhaar (Total Balance)
+          </span>
+          <div className="text-2xl font-bold text-red-600">
             Rs {totalOutstandingUdhaar.toLocaleString('en-PK')}
           </div>
         </div>
-        <div className="text-xs text-text-secondary">
-          Baqiya Grahak: <strong className="text-text-primary">{udhaarCustomers.length}</strong>
+        <div className="text-xs font-medium text-slate-500">
+          Baqiya Grahak: <strong className="text-slate-900 font-bold text-sm">{udhaarCustomers.length}</strong>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="mb-4">
+      <div className="max-w-xs">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="🔍 Grahak name se search..."
-          className="w-full max-w-xs px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-bg text-text-primary"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         />
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/15 text-red-500 rounded-xl text-sm font-medium">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
           ⚠ {error}
         </div>
       )}
 
       {/* Udhaar Table */}
       {loading ? (
-        <div className="bg-card border border-border rounded-xl p-6 text-center text-text-secondary text-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-500 text-sm">
           Udhaar load ho raha hai...
         </div>
       ) : udhaarCustomers.length === 0 ? (
@@ -170,40 +172,37 @@ export default function UdhaarPage() {
           description="Kisi grahak ka koi udhaar baqaya nahi hai"
         />
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-sm text-left">
               <thead>
-                <tr className="bg-bg border-b border-border">
+                <tr className="bg-slate-50 border-b border-slate-200">
                   {['Grahak Name', 'Qisam', 'Phone', 'Udhaar Baqi (Rs)', 'Actions'].map((h) => (
-                    <th key={h} className="px-4 py-3.5 text-left text-xs font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap">
+                    <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {udhaarCustomers.map((c, i) => (
-                  <tr
-                    key={c.id}
-                    className={`hover:bg-bg/60 transition-colors ${i < udhaarCustomers.length - 1 ? 'border-b border-border' : ''}`}
-                  >
-                    <td className="px-4 py-4 font-semibold text-text-primary">
+              <tbody className="divide-y divide-slate-100">
+                {udhaarCustomers.map((c) => (
+                  <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-4 font-semibold text-slate-900">
                       {c.name}
                     </td>
                     <td className="px-4 py-4">
                       <Badge variant={c.type.toLowerCase() as 'restaurant' | 'retail'} />
                     </td>
-                    <td className="px-4 py-4 text-text-secondary">
+                    <td className="px-4 py-4 text-slate-500">
                       {c.phone || '—'}
                     </td>
-                    <td className="px-4 py-4 font-bold text-red-500 text-base">
+                    <td className="px-4 py-4 font-bold text-red-600 text-base">
                       Rs {c.totalUdhaar.toLocaleString('en-PK')}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 text-right">
                       <button
                         onClick={() => handleOpenPayment(c)}
-                        className="px-3.5 py-1.5 text-xs font-semibold rounded-md bg-green-500/15 text-green-600 border border-green-500/30 cursor-pointer hover:bg-green-500/25 transition-colors"
+                        className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 active:scale-[0.98] cursor-pointer"
                       >
                         💳 Wasool Karein (Pay)
                       </button>

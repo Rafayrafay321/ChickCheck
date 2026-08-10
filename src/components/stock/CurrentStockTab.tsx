@@ -10,11 +10,11 @@ interface CurrentStockTabProps {
 
 function LoadingSkeleton() {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="flex gap-6 p-4 border-b border-border last:border-b-0 items-center">
+        <div key={i} className="flex gap-6 p-4 border-b border-slate-100 last:border-b-0 items-center">
           {[180, 120, 80, 60].map((w, j) => (
-            <div key={j} className="h-4 rounded bg-border animate-pulse" style={{ width: w }} />
+            <div key={j} className="h-4 rounded bg-slate-200 animate-pulse" style={{ width: w }} />
           ))}
         </div>
       ))}
@@ -36,40 +36,40 @@ export function CurrentStockTab({ isLoading, stock }: CurrentStockTabProps) {
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
+        <table className="w-full border-collapse text-sm text-left">
           <thead>
-            <tr className="bg-bg border-b border-border">
+            <tr className="bg-slate-50 border-b border-slate-200">
               {['Maal (Product)', 'Urdu Naam', 'Unit', 'Mojooda Stock (Baqi)', 'Status'].map((h) => (
-                <th key={h} className="px-4 py-3.5 text-left text-xs font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap">
+                <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {stock.map((p, i) => {
+          <tbody className="divide-y divide-slate-100">
+            {stock.map((p) => {
               const isLowStock = p.currentStock < 10
               return (
-                <tr key={p.id} className={`hover:bg-bg/60 transition-colors ${i < stock.length - 1 ? 'border-b border-border' : ''}`}>
-                  <td className="px-4 py-4 font-semibold text-text-primary">{p.name}</td>
-                  <td className="px-4 py-4 text-text-secondary italic">{p.nameUrdu ?? '—'}</td>
+                <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-4 py-4 font-semibold text-slate-900">{p.name}</td>
+                  <td className="px-4 py-4 text-slate-500 italic">{p.nameUrdu ?? '—'}</td>
                   <td className="px-4 py-4">
-                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${p.unit === 'kg' ? 'bg-green-500/15 text-green-600' : 'bg-blue-500/15 text-blue-600'}`}>
+                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${p.unit === 'kg' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
                       {p.unit}
                     </span>
                   </td>
-                  <td className={`px-4 py-4 font-bold text-base ${isLowStock ? 'text-red-500' : 'text-green-600'}`}>
-                    {p.currentStock.toLocaleString('en-PK')} <span className="text-xs font-normal text-text-secondary">{p.unit}</span>
+                  <td className={`px-4 py-4 font-bold text-base ${isLowStock ? 'text-red-600' : 'text-slate-900'}`}>
+                    {p.currentStock.toLocaleString('en-PK')} <span className="text-xs font-normal text-slate-500">{p.unit}</span>
                   </td>
                   <td className="px-4 py-4">
                     {isLowStock ? (
-                      <span className="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-red-500/15 text-red-600">
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-700">
                         ⚠ LOW STOCK
                       </span>
                     ) : (
-                      <span className="inline-block px-2.5 py-1 rounded text-xs font-semibold bg-green-500/15 text-green-600">
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700">
                         ✓ THEEK HAI
                       </span>
                     )}

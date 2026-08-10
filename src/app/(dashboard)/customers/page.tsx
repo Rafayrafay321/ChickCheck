@@ -99,7 +99,7 @@ function CustomerForm({ initial, onSubmit, onCancel, submitLabel, isLoading, ser
       />
 
       {serverError && (
-        <div className="p-3 bg-red-500/15 text-red-500 rounded-lg text-xs font-medium">
+        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">
           ⚠ {serverError}
         </div>
       )}
@@ -109,14 +109,14 @@ function CustomerForm({ initial, onSubmit, onCancel, submitLabel, isLoading, ser
           type="button"
           onClick={onCancel}
           disabled={isLoading}
-          className="py-2.5 px-5 text-sm font-semibold rounded-lg border border-border bg-transparent text-text-secondary hover:bg-bg transition-colors cursor-pointer disabled:opacity-50"
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 cursor-pointer disabled:opacity-50"
         >
           Wapas (Cancel)
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="py-2.5 px-5 text-sm font-semibold rounded-lg border-none bg-primary text-white hover:bg-primary-hover transition-colors cursor-pointer disabled:opacity-50 min-h-11"
+          className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
         >
           {isLoading ? '...' : submitLabel}
         </button>
@@ -193,39 +193,39 @@ export default function CustomersPage() {
   function openEdit(c: Customer) { setFormError(null); setEditTarget(c) }
 
   return (
-    <div>
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold m-0 text-text-primary">👥 Grahak (Customers)</h2>
-          <p className="text-text-secondary mt-1 text-sm">{customers.length} grahak registered hain</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">👥 Grahak (Customers)</h2>
+          <p className="text-sm text-slate-500 mt-1">{customers.length} grahak registered hain</p>
         </div>
         <button
           id="btn-add-customer"
           onClick={openCreate}
-          className="px-5 py-2.5 text-sm font-semibold bg-primary text-white border-none rounded-lg cursor-pointer hover:bg-primary-hover transition-colors min-h-11"
+          className="inline-flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
         >
           + Naya Grahak
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex gap-3 mb-4 flex-wrap items-center p-4 bg-card border border-border rounded-xl">
+      <div className="flex gap-3 flex-wrap items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
         <input
           id="input-search-customers"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="🔍 Naam ya phone se dhundho..."
-          className="flex-1 min-w-48 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-bg text-text-primary"
+          className="flex-1 min-w-48 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         />
         {(['ALL', 'RESTAURANT', 'RETAIL'] as FilterType[]).map(t => (
           <button
             key={t}
             onClick={() => setTypeFilter(t)}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
               typeFilter === t
-                ? 'bg-primary border-primary text-white'
-                : 'bg-transparent border-border text-text-secondary hover:border-primary/50'
+                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
             {t === 'ALL' ? 'Sab' : t === 'RESTAURANT' ? '🍽 Restaurant' : '🛒 Retail'}
@@ -237,9 +237,9 @@ export default function CustomersPage() {
       {isLoading ? (
         <LoadingSkeleton />
       ) : fetchError ? (
-        <div className="p-6 bg-red-500/15 text-red-500 rounded-xl text-sm font-medium">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
           ⚠ {fetchError} —{' '}
-          <button onClick={fetchCustomers} className="underline bg-transparent border-none cursor-pointer text-inherit">
+          <button onClick={fetchCustomers} className="underline cursor-pointer font-bold">
             Dobara try karo
           </button>
         </div>
@@ -252,7 +252,7 @@ export default function CustomersPage() {
             !search && typeFilter === 'ALL' ? (
               <button
                 onClick={openCreate}
-                className="px-5 py-2.5 text-sm font-semibold bg-primary text-white border-none rounded-lg cursor-pointer hover:bg-primary-hover transition-colors"
+                className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
               >
                 + Naya Grahak
               </button>
@@ -260,52 +260,52 @@ export default function CustomersPage() {
           }
         />
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-sm text-left">
               <thead>
-                <tr className="bg-bg border-b border-border">
+                <tr className="bg-slate-50 border-b border-slate-200">
                   {['Naam', 'Qisam', 'Phone', 'Udhaar Baqi', ''].map(h => (
                     <th
                       key={h}
-                      className="px-4 py-3.5 text-left text-xs font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap"
+                      className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"
                     >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {filtered.map((c, i) => (
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map((c) => (
                   <tr
                     key={c.id}
-                    className={`hover:bg-bg/60 transition-colors ${i < filtered.length - 1 ? 'border-b border-border' : ''}`}
+                    className="hover:bg-slate-50/50 transition-colors"
                   >
-                    <td className="px-4 py-4 font-semibold text-text-primary">{c.name}</td>
+                    <td className="px-4 py-4 font-semibold text-slate-900">{c.name}</td>
                     <td className="px-4 py-4">
                       <Badge variant={c.type.toLowerCase() as 'restaurant' | 'retail'} />
                     </td>
-                    <td className="px-4 py-4 text-text-secondary">{c.phone ?? '—'}</td>
+                    <td className="px-4 py-4 text-slate-500">{c.phone ?? '—'}</td>
                     <td className="px-4 py-4 font-bold">
-                      <span className={c.totalUdhaar > 0 ? 'text-red-500' : 'text-primary'}>
+                      <span className={c.totalUdhaar > 0 ? 'text-red-600' : 'text-slate-900'}>
                         Rs. {c.totalUdhaar.toLocaleString('en-PK')}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-4 text-right">
                       <div className="flex gap-2 justify-end">
                         <button
                           onClick={() => openEdit(c)}
                           title="Edit karo"
-                          className="px-2.5 py-1.5 rounded-md border border-border bg-transparent text-text-secondary hover:bg-bg cursor-pointer transition-colors text-sm"
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
                         >
-                          ✏
+                          ✏ Edit
                         </button>
                         <button
                           onClick={() => setDeleteTarget(c)}
                           title="Hata do"
-                          className="px-2.5 py-1.5 rounded-md border border-border bg-transparent text-red-500 hover:bg-red-500/10 cursor-pointer transition-colors text-sm"
+                          className="rounded-lg border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-600 shadow-sm transition-all hover:bg-red-50 active:scale-[0.98] cursor-pointer"
                         >
-                          🗑
+                          🗑 Delete
                         </button>
                       </div>
                     </td>
@@ -347,20 +347,20 @@ export default function CustomersPage() {
       <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Pakka Hatana Hai?">
         {deleteTarget && (
           <div className="flex flex-col gap-4">
-            <p className="text-text-secondary text-sm">
-              <strong className="text-text-primary">{deleteTarget.name}</strong> ko hata doge? Yeh action undo nahi hoga.
+            <p className="text-slate-600 text-sm m-0">
+              <strong className="text-slate-900">{deleteTarget.name}</strong> ko hata doge? Yeh action undo nahi hoga.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="py-2.5 px-5 text-sm font-semibold rounded-lg border border-border bg-transparent text-text-secondary hover:bg-bg transition-colors cursor-pointer"
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 cursor-pointer"
               >
                 Nahi
               </button>
               <button
                 onClick={handleDelete}
                 disabled={formLoading}
-                className="py-2.5 px-5 text-sm font-semibold rounded-lg border-none bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-50"
+                className="rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
               >
                 {formLoading ? '...' : 'Haan, Hatao'}
               </button>
@@ -375,13 +375,13 @@ export default function CustomersPage() {
 // ─── Sub-components ───────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="flex gap-4 p-4 border-b border-border last:border-b-0">
+        <div key={i} className="flex gap-4 p-4 border-b border-slate-100 last:border-b-0">
           {[200, 100, 120, 80].map((w, j) => (
             <div
               key={j}
-              className="h-4 rounded bg-border animate-pulse"
+              className="h-4 rounded bg-slate-200 animate-pulse"
               style={{ width: w }}
             />
           ))}

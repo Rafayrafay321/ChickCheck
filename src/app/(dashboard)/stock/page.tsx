@@ -73,24 +73,24 @@ export default function StockPage() {
   ] as const
 
   return (
-    <div>
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold m-0 text-text-primary">📦 Maal Baqi (Stock)</h2>
-          <p className="text-text-secondary mt-1 text-sm">Dukaan mein kitna maal bacha hai aur Supplier Purchasing entries</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">📦 Maal Baqi (Stock)</h2>
+          <p className="text-sm text-slate-500 mt-1">Dukaan mein kitna maal bacha hai aur Supplier Purchasing entries</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => setPurchaseModalOpen(true)}
-            className="px-5 py-2.5 text-sm font-semibold bg-blue-500/15 text-blue-500 border border-blue-500/30 rounded-lg cursor-pointer hover:bg-blue-500/25 transition-colors min-h-11"
+            className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
           >
             🚚 Live Murgi Kharid (Supplier)
           </button>
           <button
             id="btn-add-stock"
             onClick={() => { setFormError(null); setAddModalOpen(true) }}
-            className="px-5 py-2.5 text-sm font-semibold bg-primary text-white border-none rounded-lg cursor-pointer hover:bg-primary-hover transition-colors min-h-11"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
           >
             + Stock Daalo (IN)
           </button>
@@ -98,15 +98,15 @@ export default function StockPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-border">
+      <div className="flex gap-2 border-b border-slate-200">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-3 text-sm font-medium cursor-pointer bg-transparent border-none border-b-2 transition-all -mb-px ${
+            className={`px-4 py-2.5 text-sm font-medium cursor-pointer bg-transparent border-b-2 transition-all -mb-px ${
               activeTab === tab.id
-                ? 'border-b-primary text-primary font-semibold'
-                : 'border-b-transparent text-text-secondary hover:text-text-primary'
+                ? 'border-blue-600 text-blue-600 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
             }`}
           >
             {tab.label}
@@ -116,7 +116,7 @@ export default function StockPage() {
 
       {/* Error State */}
       {fetchError && (
-        <div className="p-4 bg-red-500/15 text-red-500 rounded-xl mb-4 text-sm font-medium">⚠ {fetchError}</div>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">⚠ {fetchError}</div>
       )}
 
       {/* Tab: Current Stock */}
@@ -124,31 +124,31 @@ export default function StockPage() {
 
       {/* Tab: Supplier Purchases */}
       {activeTab === 'purchases' && (
-        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           {purchasesLoading ? (
-            <div className="p-6 text-center text-text-secondary text-sm">Purchases load ho rahi hain...</div>
+            <div className="p-6 text-center text-slate-500 text-sm">Purchases load ho rahi hain...</div>
           ) : purchases.length === 0 ? (
-            <div className="p-10 text-center text-text-secondary text-sm">Koi Supplier Purchase record nahi mila. Top button se nayi entry daalein.</div>
+            <div className="p-10 text-center text-slate-500 text-sm">Koi Supplier Purchase record nahi mila. Top button se nayi entry daalein.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
+              <table className="w-full border-collapse text-sm text-left">
                 <thead>
-                  <tr className="bg-bg border-b border-border text-left">
+                  <tr className="bg-slate-50 border-b border-slate-200">
                     {['Date', 'Supplier Name', 'Gross Wt', 'Dud (Loss)', 'Net Wt', 'Rate/Kg', 'Total Amount'].map(h => (
-                      <th key={h} className="px-4 py-3.5 text-xs font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
-                  {purchases.map((p, i) => (
-                    <tr key={p.id} className={`hover:bg-bg/60 transition-colors ${i < purchases.length - 1 ? 'border-b border-border' : ''}`}>
-                      <td className="px-4 py-4 text-text-secondary">{new Date(p.purchaseDate).toLocaleDateString()}</td>
-                      <td className="px-4 py-4 font-semibold text-text-primary">{p.supplierName}</td>
-                      <td className="px-4 py-4 text-text-primary">{p.grossWeight} kg</td>
-                      <td className="px-4 py-4 text-red-500">-{p.dudWeight} kg</td>
-                      <td className="px-4 py-4 font-semibold text-text-primary">{p.netWeight} kg</td>
-                      <td className="px-4 py-4 text-text-primary">Rs {p.ratePerKg}</td>
-                      <td className="px-4 py-4 font-bold text-green-500">Rs {p.totalAmount.toLocaleString()}</td>
+                <tbody className="divide-y divide-slate-100">
+                  {purchases.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-4 text-slate-500">{new Date(p.purchaseDate).toLocaleDateString()}</td>
+                      <td className="px-4 py-4 font-semibold text-slate-900">{p.supplierName}</td>
+                      <td className="px-4 py-4 text-slate-900">{p.grossWeight} kg</td>
+                      <td className="px-4 py-4 text-red-600">-{p.dudWeight} kg</td>
+                      <td className="px-4 py-4 font-semibold text-slate-900">{p.netWeight} kg</td>
+                      <td className="px-4 py-4 text-slate-900">Rs {p.ratePerKg}</td>
+                      <td className="px-4 py-4 font-bold text-emerald-600">Rs {p.totalAmount.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -101,34 +101,34 @@ export default function InvoicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold m-0 text-text-primary">🧾 Bill (Invoices)</h2>
-          <p className="text-text-secondary mt-1 text-sm">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">🧾 Bill (Invoices)</h2>
+          <p className="text-sm text-slate-500 mt-1">
             Tamaam bills dekhein, customer payments record karein, aur PDF print karein
           </p>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex gap-3 flex-wrap items-center p-4 bg-card border border-border rounded-xl shadow-sm">
+      <div className="flex gap-3 flex-wrap items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="🔍 Invoice # ya Grahak name se search..."
-          className="flex-1 min-w-48 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-bg text-text-primary"
+          className="flex-1 min-w-48 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         />
 
         {(['', 'UNPAID', 'PARTIAL', 'PAID'] as const).map((st) => (
           <button
             key={st}
             onClick={() => setStatusFilter(st)}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
               statusFilter === st
-                ? 'bg-primary border-primary text-white'
-                : 'bg-transparent border-border text-text-secondary hover:border-primary/50'
+                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
             {st === '' ? 'Sab Status' : st}
@@ -137,14 +137,14 @@ export default function InvoicesPage() {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/15 text-red-500 rounded-xl text-sm font-medium">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
           ⚠ {error}
         </div>
       )}
 
       {/* Invoices Table */}
       {loading ? (
-        <div className="bg-card border border-border rounded-xl p-6 text-center text-text-secondary text-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-500 text-sm">
           Invoices load ho rahe hain...
         </div>
       ) : filtered.length === 0 ? (
@@ -154,59 +154,59 @@ export default function InvoicesPage() {
           description="Orders page par ja kar naya order deliver ya confirm karein"
         />
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-sm text-left">
               <thead>
-                <tr className="bg-bg border-b border-border">
+                <tr className="bg-slate-50 border-b border-slate-200">
                   {['Invoice ID', 'Customer', 'Items Count', 'Total Bill', 'Paid', 'Balance Due', 'Status', 'Actions'].map((h) => (
-                    <th key={h} className="px-4 py-3.5 text-left text-xs font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap">
+                    <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {filtered.map((inv, i) => {
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map((inv) => {
                   const balance = Math.max(0, inv.totalAmount - inv.paidAmount)
                   return (
                     <tr
                       key={inv.id}
-                      className={`hover:bg-bg/60 transition-colors ${i < filtered.length - 1 ? 'border-b border-border' : ''}`}
+                      className="hover:bg-slate-50/50 transition-colors"
                     >
-                      <td className="px-4 py-4 font-semibold text-text-secondary whitespace-nowrap">
+                      <td className="px-4 py-4 font-semibold text-slate-500 whitespace-nowrap">
                         #{inv.id.slice(-6).toUpperCase()}
                       </td>
-                      <td className="px-4 py-4 font-semibold text-text-primary">
+                      <td className="px-4 py-4 font-semibold text-slate-900">
                         {inv.customer.name}
                       </td>
-                      <td className="px-4 py-4 text-text-secondary">
+                      <td className="px-4 py-4 text-slate-500">
                         {inv.order?.items?.length || 0} items
                       </td>
-                      <td className="px-4 py-4 font-bold text-text-primary">
+                      <td className="px-4 py-4 font-bold text-slate-900">
                         Rs {inv.totalAmount.toLocaleString('en-PK')}
                       </td>
-                      <td className="px-4 py-4 font-semibold text-green-600">
+                      <td className="px-4 py-4 font-semibold text-emerald-600">
                         Rs {inv.paidAmount.toLocaleString('en-PK')}
                       </td>
-                      <td className="px-4 py-4 font-bold text-red-500">
+                      <td className="px-4 py-4 font-bold text-red-600">
                         Rs {balance.toLocaleString('en-PK')}
                       </td>
                       <td className="px-4 py-4">
                         <Badge variant={inv.status.toLowerCase() as 'paid' | 'partial' | 'unpaid'} />
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="flex gap-2 whitespace-nowrap">
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex gap-2 justify-end whitespace-nowrap">
                           <button
                             onClick={() => setViewModalTarget(inv)}
-                            className="px-3 py-1.5 text-xs font-semibold rounded-md border border-border bg-transparent text-text-secondary hover:bg-bg cursor-pointer transition-colors"
+                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
                           >
                             🖨️ Bill Print
                           </button>
                           {inv.status !== 'PAID' && (
                             <button
                               onClick={() => setPaymentModalTarget(inv)}
-                              className="px-3 py-1.5 text-xs font-semibold rounded-md bg-green-500/15 text-green-600 border border-green-500/30 cursor-pointer hover:bg-green-500/25 transition-colors"
+                              className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 active:scale-[0.98] cursor-pointer"
                             >
                               💳 Wasool (Pay)
                             </button>

@@ -75,21 +75,21 @@ function ProductForm({ initial, onSubmit, onCancel, submitLabel, isLoading, serv
             type="checkbox"
             checked={form.isActive ?? true}
             onChange={e => set('isActive', e.target.checked)}
-            className="w-4 h-4 cursor-pointer accent-primary"
+            className="w-4 h-4 cursor-pointer accent-blue-600 rounded border-slate-300"
           />
-          <span className="text-sm font-medium text-text-primary">Active Hai (sale mein show hoga)</span>
+          <span className="text-sm font-medium text-slate-700">Active Hai (sale mein show hoga)</span>
         </label>
       )}
 
       {serverError && (
-        <div className="p-3 bg-red-500/15 text-red-500 rounded-lg text-xs font-medium">⚠ {serverError}</div>
+        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">⚠ {serverError}</div>
       )}
 
       <div className="flex gap-3 justify-end mt-2">
-        <button type="button" onClick={onCancel} disabled={isLoading} className="py-2.5 px-5 text-sm font-semibold rounded-lg border border-border bg-transparent text-text-secondary hover:bg-bg transition-colors cursor-pointer disabled:opacity-50">
+        <button type="button" onClick={onCancel} disabled={isLoading} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 cursor-pointer disabled:opacity-50">
           Wapas (Cancel)
         </button>
-        <button type="submit" disabled={isLoading} className="py-2.5 px-5 text-sm font-semibold rounded-lg border-none bg-primary text-white hover:bg-primary-hover transition-colors cursor-pointer disabled:opacity-50 min-h-11">
+        <button type="submit" disabled={isLoading} className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11">
           {isLoading ? '...' : submitLabel}
         </button>
       </div>
@@ -144,26 +144,30 @@ export default function ProductsPage() {
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold m-0 text-text-primary">🐔 Maal (Products)</h2>
-          <p className="text-text-secondary mt-1 text-sm">{products.length} products hain</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">🐔 Maal (Products)</h2>
+          <p className="text-sm text-slate-500 mt-1">{products.length} products hain</p>
         </div>
-        <button id="btn-add-product" onClick={() => { setFormError(null); setCreateOpen(true) }} className="px-5 py-2.5 text-sm font-semibold bg-primary text-white border-none rounded-lg cursor-pointer hover:bg-primary-hover transition-colors min-h-11">
+        <button
+          id="btn-add-product"
+          onClick={() => { setFormError(null); setCreateOpen(true) }}
+          className="inline-flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+        >
           + Naya Maal
         </button>
       </div>
 
       {/* Search Bar */}
-      <div className="mb-4">
+      <div className="max-w-xs">
         <input
           id="input-search-products"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="🔍 Naam se dhundho..."
-          className="w-full max-w-xs px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-bg text-text-primary"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         />
       </div>
 
@@ -177,36 +181,49 @@ export default function ProductsPage() {
           emoji="🐔"
           title={search ? 'Koi nahi mila' : 'Abhi koi maal nahi hai'}
           description={search ? 'Search clear karo' : 'Pehla product add karo — jaise Whole Chicken, Boneless, Wings'}
-          action={!search ? <button onClick={() => setCreateOpen(true)} className="px-5 py-2.5 text-sm font-semibold bg-primary text-white border-none rounded-lg cursor-pointer hover:bg-primary-hover transition-colors">+ Naya Maal</button> : undefined}
+          action={!search ? (
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+            >
+              + Naya Maal
+            </button>
+          ) : undefined}
         />
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-sm text-left">
               <thead>
-                <tr className="bg-bg border-b border-border">
+                <tr className="bg-slate-50 border-b border-slate-200">
                   {['Naam', 'Urdu Naam', 'Unit', 'Qeemat', 'Status', ''].map(h => (
-                    <th key={h} className="px-4 py-3.5 text-left text-xs font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {filtered.map((p, i) => (
-                  <tr key={p.id} className={`hover:bg-bg/60 transition-colors ${i < filtered.length - 1 ? 'border-b border-border' : ''} ${!p.isActive ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-4 font-semibold text-text-primary">{p.name}</td>
-                    <td className="px-4 py-4 text-text-secondary italic">{p.nameUrdu ?? '—'}</td>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map((p) => (
+                  <tr key={p.id} className={`hover:bg-slate-50/50 transition-colors ${!p.isActive ? 'opacity-50' : ''}`}>
+                    <td className="px-4 py-4 font-semibold text-slate-900">{p.name}</td>
+                    <td className="px-4 py-4 text-slate-500 italic">{p.nameUrdu ?? '—'}</td>
                     <td className="px-4 py-4">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${p.unit === 'kg' ? 'bg-green-500/15 text-green-600' : 'bg-blue-500/15 text-blue-600'}`}>
+                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${p.unit === 'kg' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
                         {p.unit}
                       </span>
                     </td>
-                    <td className="px-4 py-4 font-bold text-primary">
+                    <td className="px-4 py-4 font-bold text-slate-900">
                       Rs. {p.pricePerUnit.toLocaleString('en-PK')}
-                      <span className="font-normal text-text-secondary text-xs">/{p.unit}</span>
+                      <span className="font-normal text-slate-500 text-xs">/{p.unit}</span>
                     </td>
                     <td className="px-4 py-4"><Badge variant={p.isActive ? 'active' : 'inactive'} /></td>
-                    <td className="px-4 py-4">
-                      <button onClick={() => { setFormError(null); setEditTarget(p) }} title="Edit karo" className="px-2.5 py-1.5 rounded-md border border-border bg-transparent text-text-secondary hover:bg-bg cursor-pointer transition-colors text-sm">✏</button>
+                    <td className="px-4 py-4 text-right">
+                      <button
+                        onClick={() => { setFormError(null); setEditTarget(p) }}
+                        title="Edit karo"
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
+                      >
+                        ✏ Edit
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -234,11 +251,11 @@ export default function ProductsPage() {
 // ─── Shared Sub-components ────────────────────────────────────────
 export function LoadingSkeleton({ cols = 4 }: { cols?: number }) {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="flex gap-4 p-4 border-b border-border last:border-b-0">
+        <div key={i} className="flex gap-4 p-4 border-b border-slate-100 last:border-b-0">
           {Array.from({ length: cols }).map((_, j) => (
-            <div key={j} className="h-4 rounded bg-border animate-pulse flex-1" />
+            <div key={j} className="h-4 rounded bg-slate-200 animate-pulse flex-1" />
           ))}
         </div>
       ))}
@@ -248,9 +265,9 @@ export function LoadingSkeleton({ cols = 4 }: { cols?: number }) {
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="p-6 bg-red-500/15 text-red-500 rounded-xl text-sm font-medium">
+    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
       ⚠ {message} —{' '}
-      <button onClick={onRetry} className="underline bg-transparent border-none cursor-pointer text-inherit">Dobara try karo</button>
+      <button onClick={onRetry} className="underline cursor-pointer font-bold">Dobara try karo</button>
     </div>
   )
 }

@@ -26,21 +26,21 @@ export function Modal({ isOpen, onClose, title, width, maxWidth, children }: Mod
 
   return (
     <div
-      className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border rounded-xl p-6 w-full shadow-2xl transition-all"
+        className="w-full rounded-xl border border-slate-200 bg-white p-6 shadow-xl transition-all"
         style={{ maxWidth: width || maxWidth || '440px' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="m-0 text-lg font-semibold text-text-primary">
+        <div className="mb-5 flex items-center justify-between">
+          <h3 className="m-0 text-lg font-semibold tracking-tight text-slate-900">
             {title}
           </h3>
           <button
             onClick={onClose}
-            className="bg-transparent border-none text-lg text-text-secondary cursor-pointer p-1 hover:text-text-primary transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 cursor-pointer text-lg"
           >
             ✕
           </button>

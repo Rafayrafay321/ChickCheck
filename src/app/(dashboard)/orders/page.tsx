@@ -121,29 +121,29 @@ export default function OrdersPage() {
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold m-0 text-text-primary">📋 Orders</h2>
-          <p className="text-text-secondary mt-1 text-sm">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">📋 Orders</h2>
+          <p className="text-sm text-slate-500 mt-1">
             Customer orders aur deliveries manage karein
           </p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-5 py-2.5 text-sm font-semibold bg-primary text-white border-none rounded-lg cursor-pointer hover:bg-primary-hover transition-colors min-h-11"
+          className="inline-flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
         >
           + Naya Order
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 mb-6 flex-wrap">
+      {/* Filters Bar */}
+      <div className="flex gap-3 flex-wrap items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
         <select
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
-          className="px-3.5 py-2.5 rounded-lg border border-border bg-card text-sm text-text-primary min-w-36 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
         >
           <option value="">Sab Status (All)</option>
           <option value="PENDING">⏳ PENDING</option>
@@ -154,7 +154,7 @@ export default function OrdersPage() {
         <select
           value={filterCustomer}
           onChange={e => setFilterCustomer(e.target.value)}
-          className="px-3.5 py-2.5 rounded-lg border border-border bg-card text-sm text-text-primary min-w-36 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
         >
           <option value="">Sab Customers (All)</option>
           {customers.map(c => (
@@ -164,7 +164,7 @@ export default function OrdersPage() {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/15 text-red-500 rounded-xl mb-4 text-sm font-medium">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
           ⚠ {error}
         </div>
       )}

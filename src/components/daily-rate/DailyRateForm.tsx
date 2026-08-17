@@ -95,7 +95,7 @@ export function DailyRateForm({ initialData, onSubmit, onCancel }: DailyRateForm
   <button
     type="submit"
     disabled={submitting}
-    className="flex-1 py-2.5 px-4 rounded-lg cursor-pointer border-none bg-primary text-white font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50"
+    className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
   >
     {submitting ? 'Saving...' : 'Save Rate'}
   </button>

@@ -5,72 +5,109 @@ export async function GET() {
   try {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    // Find the latest EOD report to know if today's session has been closed
+    const latestEod = await db.endOfDay.findFirst({
+      orderBy: { createdAt: 'desc' },
+    })
+
+    // If an EOD was completed, current open session starts after that EOD.
+    // Otherwise, current session starts at midnight of today.
+    const sessionStart = latestEod ? latestEod.createdAt : today
 
     const [
       todayOrders,
       todayPurchasesResult,
       todayExpensesResult,
+      todayEmergencyPurchasesResult,
       totalUdhaarResult,
       pendingOrders,
-      products,
       recentOrders,
       recentPayments,
+      purchasesAgg,
+      pool,
     ] = await Promise.all([
       db.order.findMany({
-        where: { orderDate: { gte: today, lt: tomorrow }, status: { not: 'CANCELLED' } },
+        where: { orderDate: { gte: sessionStart }, status: { not: 'CANCELLED' } },
+        include: { items: { include: { product: true } } },
       }),
       db.supplierPurchase.findMany({
-        where: { purchaseDate: { gte: today, lt: tomorrow } },
+        where: { purchaseDate: { gte: sessionStart } },
       }),
       db.expense.findMany({
-        where: { date: { gte: today, lt: tomorrow } },
+        where: { date: { gte: sessionStart } },
       }),
-      db.customer.aggregate({ _sum: { totalUdhaar: true } }),
-      db.order.count({ where: { status: 'PENDING' } }),
-      db.product.findMany({
-        include: {
-          stockEntries: { select: { type: true, quantity: true } },
-        },
+      db.emergencyPurchase.findMany({
+        where: { purchaseDate: { gte: sessionStart } },
       }),
+      db.invoice.aggregate({
+        where: { status: { notIn: ['PAID', 'CANCELLED'] } },
+        _sum: { totalAmount: true, paidAmount: true },
+      }),
+      db.order.count({ where: { status: 'PENDING', createdAt: { gte: sessionStart } } }),
       db.order.findMany({
-        take: 5,
+        take: 6,
         orderBy: { orderDate: 'desc' },
         include: { customer: { select: { name: true, type: true } } },
       }),
       db.payment.findMany({
-        take: 5,
+        take: 6,
         orderBy: { paidAt: 'desc' },
         include: { customer: { select: { name: true } } },
+      }),
+      db.supplierPurchase.aggregate({
+        _sum: { netWeight: true },
+        where: { purchaseDate: { gte: sessionStart } },
+      }),
+      db.liveWeightPool.findUnique({
+        where: { date: today },
       }),
     ])
 
     const todaySales = todayOrders.reduce((sum, o) => sum + o.totalAmount, 0)
     const todayPurchases = todayPurchasesResult.reduce((sum, p) => sum + p.totalAmount, 0)
     const todayExpenses = todayExpensesResult.reduce((sum, e) => sum + e.amount, 0)
-    const grossProfit = todaySales - todayPurchases
+    const todayEmergencyCost = todayEmergencyPurchasesResult.reduce((sum, ep) => sum + ep.totalCost, 0)
+
+    const grossProfit = todaySales - todayPurchases - todayEmergencyCost
     const netProfit = grossProfit - todayExpenses
 
-    // Calculate low stock count (< 10kg)
-    let lowStockCount = 0
-    products.forEach((p) => {
-      const stockIn = p.stockEntries.filter((s) => s.type === 'IN').reduce((sum, s) => sum + s.quantity, 0)
-      const stockOut = p.stockEntries.filter((s) => s.type === 'OUT').reduce((sum, s) => sum + s.quantity, 0)
-      const currentStock = stockIn - stockOut
-      if (currentStock < 10) lowStockCount++
-    })
+    // Live Pool Calculation for Active Session
+    let openingWeight = 0
+    if (pool && pool.closingWeight !== null) {
+      openingWeight = pool.closingWeight
+    } else if (pool) {
+      openingWeight = pool.openingWeight
+    } else {
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const prevPool = await db.liveWeightPool.findUnique({ where: { date: yesterday } })
+      openingWeight = prevPool?.closingWeight ?? 0
+    }
+
+    const purchasesWeight = purchasesAgg._sum.netWeight ?? 0
+
+    let soldWeight = 0
+    for (const order of todayOrders) {
+      for (const item of order.items) {
+        if (!item.product.isByproduct) {
+          soldWeight += item.quantity
+        }
+      }
+    }
+
+    const livePoolAvailable = Math.max(0, openingWeight + purchasesWeight - soldWeight)
 
     return NextResponse.json({
       success: true,
       data: {
         todaySales,
-        todayPurchases,
+        todayPurchases: todayPurchases + todayEmergencyCost,
         todayExpenses,
         netProfit,
-        totalUdhaar: totalUdhaarResult._sum.totalUdhaar ?? 0,
+        totalUdhaar: Math.max(0, (totalUdhaarResult._sum.totalAmount ?? 0) - (totalUdhaarResult._sum.paidAmount ?? 0)),
         pendingOrders,
-        lowStockCount,
+        livePoolAvailable,
         recentOrders,
         recentPayments,
       },

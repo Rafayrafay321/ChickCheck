@@ -131,7 +131,7 @@ export function InvoiceViewModal({ isOpen, onClose, invoice }: InvoiceViewModalP
           <button
             type="button"
             onClick={handlePrint}
-            className="py-2.5 px-5 rounded-lg border-none bg-primary text-white font-semibold hover:bg-primary-hover cursor-pointer transition-colors min-h-11 flex items-center gap-2"
+            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer min-h-11 flex items-center gap-2"
           >
             🖨️ Bill Print Karein
           </button>

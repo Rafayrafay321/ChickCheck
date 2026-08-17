@@ -71,8 +71,8 @@ export function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
                 onClick={() => setCategory(cat.id)}
                 className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
                   isSelected
-                    ? 'bg-primary/15 border-primary text-primary'
-                    : 'bg-bg border-border text-text-secondary hover:border-primary/50'
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'
                 }`}
               >
                 <span className="text-base">{cat.emoji}</span>
@@ -124,7 +124,7 @@ export function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
         <button
           type="submit"
           disabled={submitting}
-          className="flex-2 py-2.5 px-4 rounded-lg cursor-pointer border-none bg-primary text-white font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50"
+          className="flex-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
         >
           {submitting ? 'Saving...' : 'Save Expense'}
         </button>

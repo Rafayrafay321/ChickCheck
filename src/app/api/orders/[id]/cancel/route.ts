@@ -28,6 +28,17 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         where: { orderId: id },
         data: { status: 'CANCELLED' }
       })
+
+      // Recalculate customer's total udhaar
+      const unpaidInvoices = await tx.invoice.aggregate({
+        where: { customerId: order.customerId, status: { notIn: ['PAID', 'CANCELLED'] } },
+        _sum: { totalAmount: true, paidAmount: true },
+      })
+      const newCustomerUdhaar = Math.max(0, (unpaidInvoices._sum.totalAmount ?? 0) - (unpaidInvoices._sum.paidAmount ?? 0))
+      await tx.customer.update({
+        where: { id: order.customerId },
+        data: { totalUdhaar: newCustomerUdhaar },
+      })
     })
 
     return NextResponse.json({ success: true })

@@ -15,7 +15,7 @@ export interface SupplierPurchaseData {
   purchaseDate: string
 }
 
-export function useSupplierPurchases() {
+export function useSupplierPurchases(filters?: { date?: string; all?: boolean }) {
   const [purchases, setPurchases] = useState<SupplierPurchaseData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,9 +24,13 @@ export function useSupplierPurchases() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch('/api/purchases')
+      const params = new URLSearchParams()
+      if (filters?.date) params.set('date', filters.date)
+      if (filters?.all) params.set('all', 'true')
+
+      const res = await fetch(`/api/purchases?${params.toString()}`)
       const json = await res.json()
-      if (json.success && json.data) {
+      if (json.success && Array.isArray(json.data)) {
         setPurchases(json.data)
       } else {
         setPurchases([])
@@ -36,7 +40,7 @@ export function useSupplierPurchases() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [filters?.date, filters?.all])
 
   useEffect(() => {
     fetchPurchases()
@@ -52,7 +56,7 @@ export function useSupplierPurchases() {
       })
       const json = await res.json()
       if (json.success && json.data) {
-        setPurchases((prev) => [json.data, ...prev])
+        await fetchPurchases()
         return { success: true, data: json.data }
       } else {
         const err = json.error || 'Purchase save fail hua'
@@ -66,8 +70,13 @@ export function useSupplierPurchases() {
     }
   }
 
+  const totalPurchasedKg = purchases.reduce((sum, p) => sum + p.netWeight, 0)
+  const totalPurchasesCost = purchases.reduce((sum, p) => sum + p.totalAmount, 0)
+
   return {
     purchases,
+    totalPurchasedKg,
+    totalPurchasesCost,
     loading,
     error,
     refetch: fetchPurchases,

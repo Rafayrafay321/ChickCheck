@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 
-interface Product {
-  id: string
-  name: string
-  unit: string
+interface LivePool {
+  openingWeight: number
+  purchasesWeight: number
+  soldWeight: number
+  availableWeight: number
 }
 
 interface EODReport {
@@ -19,19 +20,20 @@ interface EODReport {
   grossProfit: number
   netProfit: number
   retailCashDrawer: number
+  discrepancy: number
   note: string | null
   createdAt: string
 }
 
 export default function EndOfDayPage() {
-  const [products, setProducts] = useState<Product[]>([])
+  const [livePool, setLivePool] = useState<LivePool | null>(null)
   const [reports, setReports] = useState<EODReport[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Form states
+  const [liveClosingKg, setLiveClosingKg] = useState('')
   const [retailCashDrawer, setRetailCashDrawer] = useState('')
-  const [stockAuditInputs, setStockAuditInputs] = useState<Record<string, string>>({})
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -41,13 +43,13 @@ export default function EndOfDayPage() {
     async function loadData() {
       try {
         setLoading(true)
-        const [prodRes, eodRes] = await Promise.all([
-          fetch('/api/products').then((r) => r.json()),
+        const [stockRes, eodRes] = await Promise.all([
+          fetch('/api/stock').then((r) => r.json()),
           fetch('/api/eod').then((r) => r.json()),
         ])
 
-        if (prodRes.success && Array.isArray(prodRes.data)) {
-          setProducts(prodRes.data)
+        if (stockRes.success && stockRes.data) {
+          setLivePool(stockRes.data.livePool)
         }
         if (eodRes.success && Array.isArray(eodRes.data)) {
           setReports(eodRes.data)
@@ -62,12 +64,9 @@ export default function EndOfDayPage() {
     loadData()
   }, [])
 
-  function handleAuditChange(productId: string, value: string) {
-    setStockAuditInputs((prev) => ({
-      ...prev,
-      [productId]: value,
-    }))
-  }
+  const expectedRemaining = livePool?.availableWeight ?? 0
+  const currentPhysical = parseFloat(liveClosingKg) || 0
+  const liveVariance = liveClosingKg ? currentPhysical - expectedRemaining : null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -75,12 +74,6 @@ export default function EndOfDayPage() {
     setSubmitSuccess(null)
 
     const cash = parseFloat(retailCashDrawer) || 0
-    const audits = Object.entries(stockAuditInputs)
-      .map(([productId, val]) => ({
-        productId,
-        closingKg: parseFloat(val) || 0,
-      }))
-      .filter((a) => !isNaN(a.closingKg))
 
     try {
       setSubmitting(true)
@@ -89,15 +82,15 @@ export default function EndOfDayPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           retailCashDrawer: cash,
+          liveClosingKg: currentPhysical,
           note: note.trim() || undefined,
-          audits,
         }),
       })
 
       const json = await res.json()
       if (json.success && json.data) {
-        setSubmitSuccess('Aaj ka End of Day Report kamyabi se save ho gaya!')
-        setReports((prev) => [json.data, ...prev])
+        setSubmitSuccess('Aaj ka End of Day Report & Live Pool Audit save ho gaya!')
+        setReports((prev) => [json.data, ...prev.filter((r) => r.id !== json.data.id)])
       } else {
         setSubmitError(json.error || 'EOD submission fail hua')
       }
@@ -114,7 +107,7 @@ export default function EndOfDayPage() {
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">📊 Din Khatam (End of Day Audit)</h2>
         <p className="text-sm text-slate-500 mt-1">
-          Roz ka hisaab — physical stock audit, cash drawer count, aur Net Profit calculation
+          Shared Live Hen Pool Audit, Cash Drawer Count, aur Net Profit Calculation
         </p>
       </div>
 
@@ -128,7 +121,7 @@ export default function EndOfDayPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <form onSubmit={handleSubmit} className="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
           <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 m-0">
-            1. Physical Stock Count & Cash Audit
+            1. Shared Live Hen Pool Reconciliation
           </h3>
 
           {submitError && (
@@ -142,34 +135,54 @@ export default function EndOfDayPage() {
             </div>
           )}
 
-          {/* Physical Stock Audit Grid */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-              Raat Ko Bacha Hua Stock Count (Kg)
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {products.map((p) => (
-                <div key={p.id} className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
-                  <span className="block text-xs font-semibold text-slate-900 mb-1.5 truncate">
-                    {p.name}
-                  </span>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="0.0 kg"
-                    value={stockAuditInputs[p.id] || ''}
-                    onChange={(e) => handleAuditChange(p.id, e.target.value)}
-                    className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  />
+          {/* Live Weight Pool Reconciliation Panel */}
+          <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-4">
+            <div className="grid grid-cols-3 gap-4 text-xs">
+              <div>
+                <span className="text-slate-500 block mb-1 font-medium">Opening + Purchases</span>
+                <strong className="text-sm text-slate-900">{((livePool?.openingWeight ?? 0) + (livePool?.purchasesWeight ?? 0))} kg</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block mb-1 font-medium">Total Sold (All Cuts)</span>
+                <strong className="text-sm text-red-600">-{livePool?.soldWeight ?? 0} kg</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block mb-1 font-medium">Expected Remaining</span>
+                <strong className="text-sm text-blue-600">{expectedRemaining} kg</strong>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                  Raat Ko Physical Live Hen Count (Kg)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  required
+                  placeholder={`e.g. ${expectedRemaining}`}
+                  value={liveClosingKg}
+                  onChange={(e) => setLiveClosingKg(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+
+              {liveVariance !== null && (
+                <div className={`p-3 rounded-lg border text-xs font-medium ${liveVariance >= 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                  <span>Variance / Difference:</span>
+                  <strong className="block text-base font-bold mt-0.5">
+                    {liveVariance > 0 ? `+${liveVariance.toFixed(1)}` : liveVariance.toFixed(1)} kg
+                  </strong>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
           {/* Cash Drawer Count */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Retail Cash in Hand (Draz Mein Cash)
+              2. Retail Cash in Hand (Draz Mein Cash)
             </label>
             <input
               type="number"
@@ -189,7 +202,7 @@ export default function EndOfDayPage() {
             </label>
             <input
               type="text"
-              placeholder="e.g. Shabeen bill pending, stock balanced..."
+              placeholder="e.g. Shabeen bill pending, live pool variance noted..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -229,7 +242,7 @@ export default function EndOfDayPage() {
                   </div>
                   <div className="flex justify-between text-slate-500">
                     <span>Purchases: Rs {rep.totalPurchases.toLocaleString()}</span>
-                    <span>Drawer: Rs {rep.retailCashDrawer.toLocaleString()}</span>
+                    <span>Variance: <strong className={rep.discrepancy < 0 ? 'text-red-600' : 'text-emerald-600'}>{rep.discrepancy > 0 ? `+${rep.discrepancy}` : rep.discrepancy} kg</strong></span>
                   </div>
                 </div>
               ))}

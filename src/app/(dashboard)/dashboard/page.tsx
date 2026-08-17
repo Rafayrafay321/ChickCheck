@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
 
 interface DashboardData {
   todaySales: number
@@ -10,22 +9,7 @@ interface DashboardData {
   todayExpenses: number
   netProfit: number
   totalUdhaar: number
-  pendingOrders: number
-  lowStockCount: number
-  recentOrders: Array<{
-    id: string
-    orderDate: string
-    totalAmount: number
-    status: 'PENDING' | 'DELIVERED' | 'CANCELLED'
-    customer: { name: string; type: string }
-  }>
-  recentPayments: Array<{
-    id: string
-    amount: number
-    method: string
-    paidAt: string
-    customer: { name: string }
-  }>
+  livePoolAvailable: number
 }
 
 export default function DashboardPage() {
@@ -57,9 +41,12 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-sm font-medium text-slate-500 animate-pulse">
-          Dashboard stats load ho rahe hain...
+      <div className="mx-auto max-w-7xl space-y-6 animate-pulse">
+        <div className="h-10 w-48 bg-slate-200 rounded-lg" />
+        <div className="h-44 bg-slate-200 rounded-2xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="h-20 bg-slate-200 rounded-xl" />
+          <div className="h-20 bg-slate-200 rounded-xl" />
         </div>
       </div>
     )
@@ -68,193 +55,142 @@ export default function DashboardPage() {
   if (error || !data) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
-        ⚠ {error || 'Data missing'}
+        ⚠ {error || 'Data load karne mein masla hua'}
       </div>
     )
   }
 
+  const isProfit = data.netProfit >= 0
+
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
-      {/* Header & Touch-Friendly Action Buttons */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Aaj ki bikri, kharcha, murgi aamdan, aur net munafa live summary
-          </p>
+    <div className="mx-auto max-w-7xl space-y-6">
+      {/* 1. Header & Primary Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 m-0">Dashboard</h2>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live Session
+          </span>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2.5 flex-wrap">
           <Link
             href="/orders"
-            className="inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm font-medium transition-all active:scale-[0.98] no-underline text-sm"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm text-sm font-semibold transition-all active:scale-[0.98] no-underline"
           >
-            + Naya Order
+            <span>+</span> Naya Order
           </Link>
           <Link
             href="/stock"
-            className="inline-flex items-center justify-center px-4 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm font-medium transition-all active:scale-[0.98] no-underline text-sm"
+            className="inline-flex items-center justify-center px-3.5 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-medium transition-all active:scale-[0.98] no-underline"
           >
-            🚚 Supplier Purchase
+            🚚 Maal Kharid
           </Link>
           <Link
             href="/expenses"
-            className="inline-flex items-center justify-center px-4 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm font-medium transition-all active:scale-[0.98] no-underline text-sm"
+            className="inline-flex items-center justify-center px-3.5 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-medium transition-all active:scale-[0.98] no-underline"
           >
-            💸 Kharcha Log
+            💸 Kharcha
+          </Link>
+          <Link
+            href="/end-of-day"
+            className="inline-flex items-center justify-center px-3.5 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-sm text-sm font-medium transition-all active:scale-[0.98] no-underline"
+          >
+            📊 EOD Hisaab
           </Link>
         </div>
       </div>
 
-      {/* Primary KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Today's Sales */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-full space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
-            💰 Aaj Ki Sales
-          </span>
-          <div className="text-2xl font-bold text-slate-900">
-            Rs {data.todaySales.toLocaleString('en-PK')}
+      {/* 2. Unified Hero Financial Summary Card */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          {/* Main Net Profit Indicator (Left Col) */}
+          <div className="lg:col-span-5 lg:border-r lg:border-slate-100 lg:pr-6 space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+              📈 Aaj Ka Munafa (Net Profit)
+            </span>
+            <div className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${isProfit ? 'text-emerald-600' : 'text-red-600'}`}>
+              Rs {data.netProfit.toLocaleString('en-PK')}
+            </div>
           </div>
-        </div>
 
-        {/* Today's Purchases */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-full space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
-            🚚 Live Hen Purchases
-          </span>
-          <div className="text-2xl font-bold text-slate-900">
-            Rs {data.todayPurchases.toLocaleString('en-PK')}
-          </div>
-        </div>
+          {/* 3 Core Financial Pillars (Right Col) */}
+          <div className="lg:col-span-7 grid grid-cols-3 gap-4 text-left">
+            {/* Sales */}
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
+                💰 Kul Sales
+              </span>
+              <strong className="text-lg sm:text-xl font-bold text-slate-900 block truncate">
+                Rs {data.todaySales.toLocaleString('en-PK')}
+              </strong>
+              <span className="text-[11px] text-emerald-600 font-medium">+ Income</span>
+            </div>
 
-        {/* Today's Expenses */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-full space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
-            💸 Daily Expenses
-          </span>
-          <div className="text-2xl font-bold text-slate-900">
-            Rs {data.todayExpenses.toLocaleString('en-PK')}
-          </div>
-        </div>
+            {/* Purchases */}
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
+                🚚 Maal Kharid
+              </span>
+              <strong className="text-lg sm:text-xl font-bold text-slate-900 block truncate">
+                Rs {data.todayPurchases.toLocaleString('en-PK')}
+              </strong>
+              <span className="text-[11px] text-slate-400 font-medium">Live & Cuts</span>
+            </div>
 
-        {/* Net Profit */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-full space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
-            📈 Net Profit Today
-          </span>
-          <div className={`text-2xl font-bold ${data.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-            Rs {data.netProfit.toLocaleString('en-PK')}
+            {/* Expenses */}
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
+                💸 Dukan Kharchay
+              </span>
+              <strong className="text-lg sm:text-xl font-bold text-slate-900 block truncate">
+                Rs {data.todayExpenses.toLocaleString('en-PK')}
+              </strong>
+              <span className="text-[11px] text-red-500 font-medium">- Deductions</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Secondary Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+      {/* 3. Operational Quick Stat Strips */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Udhaar */}
+        <Link
+          href="/udhaar"
+          className="group rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm hover:border-slate-300 transition-all flex items-center justify-between no-underline"
+        >
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
-              📒 Total Udhaar Baqi
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
+              📒 Kul Udhaar Baqi
             </span>
-            <strong className="text-xl font-bold text-slate-900">
+            <strong className="text-2xl font-bold text-red-600 block mt-1">
               Rs {data.totalUdhaar.toLocaleString('en-PK')}
             </strong>
           </div>
-          <Link href="/udhaar" className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline">
-            View Khata →
-          </Link>
-        </div>
+          <span className="text-xs font-semibold text-red-600 group-hover:translate-x-0.5 transition-transform">
+            Khata Dekhein →
+          </span>
+        </Link>
 
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+        {/* Mojooda Stock */}
+        <Link
+          href="/stock"
+          className="group rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm hover:border-slate-300 transition-all flex items-center justify-between no-underline"
+        >
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
-              ⏳ Pending Orders
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block">
+              🐔 Mojooda Stock
             </span>
-            <strong className="text-xl font-bold text-slate-900">
-              {data.pendingOrders} orders
+            <strong className="text-2xl font-bold text-blue-600 block mt-1">
+              {data.livePoolAvailable.toFixed(1)} kg
             </strong>
           </div>
-          <Link href="/orders" className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline">
-            View Orders →
-          </Link>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
-              📦 Low Stock Items (&lt;10kg)
-            </span>
-            <strong className="text-xl font-bold text-slate-900">
-              {data.lowStockCount} items
-            </strong>
-          </div>
-          <Link href="/stock" className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline">
-            Check Stock →
-          </Link>
-        </div>
-      </div>
-
-      {/* Recent Activity Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Orders */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-            <h3 className="text-base font-bold text-slate-900 m-0">📋 Recent Orders</h3>
-            <Link href="/orders" className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline">
-              All Orders →
-            </Link>
-          </div>
-          {data.recentOrders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 px-4 text-slate-400 bg-slate-50/50 rounded-lg border border-dashed border-slate-200 text-sm text-center">
-              <span>📋</span>
-              <span className="mt-1 font-medium">Koi order nahi mila.</span>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {data.recentOrders.map((o) => (
-                <div key={o.id} className="p-3.5 rounded-lg border border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs">
-                  <div>
-                    <strong className="text-slate-900 font-semibold block text-sm">{o.customer.name}</strong>
-                    <span className="text-slate-500">#{o.id.slice(-6).toUpperCase()} • {new Date(o.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  <div className="text-right flex items-center gap-3">
-                    <strong className="text-slate-900 font-bold text-sm">Rs {o.totalAmount.toLocaleString('en-PK')}</strong>
-                    <OrderStatusBadge status={o.status} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Recent Payments */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-            <h3 className="text-base font-bold text-slate-900 m-0">💳 Recent Udhaar Payments</h3>
-            <Link href="/invoices" className="text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline">
-              All Invoices →
-            </Link>
-          </div>
-          {data.recentPayments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 px-4 text-slate-400 bg-slate-50/50 rounded-lg border border-dashed border-slate-200 text-sm text-center">
-              <span>💳</span>
-              <span className="mt-1 font-medium">Koi payment record nahi mila.</span>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {data.recentPayments.map((p) => (
-                <div key={p.id} className="p-3.5 rounded-lg border border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs">
-                  <div>
-                    <strong className="text-slate-900 font-semibold block text-sm">{p.customer.name}</strong>
-                    <span className="text-slate-500">{p.method} • {new Date(p.paidAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  <strong className="text-emerald-600 font-bold text-sm">
-                    + Rs {p.amount.toLocaleString('en-PK')}
-                  </strong>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          <span className="text-xs font-semibold text-blue-600 group-hover:translate-x-0.5 transition-transform">
+            Stock Dekhein →
+          </span>
+        </Link>
       </div>
     </div>
   )

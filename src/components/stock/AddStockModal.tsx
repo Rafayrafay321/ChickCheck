@@ -14,21 +14,14 @@ interface AddStockModalProps {
   formError: string | null
 }
 
-const primaryBtnStyle: React.CSSProperties = {
-  padding: '10px 20px', fontSize: '0.875rem', fontWeight: 600,
-  backgroundColor: 'var(--color-primary)', color: '#fff',
-  border: 'none', borderRadius: '8px', cursor: 'pointer',
-  minHeight: '44px', transition: 'background-color 0.15s ease',
-}
-
-const secondaryBtnStyle: React.CSSProperties = {
-  padding: '10px 20px', fontSize: '0.875rem', fontWeight: 600,
-  backgroundColor: 'transparent', color: 'var(--color-text-secondary)',
-  border: '1px solid var(--color-border)', borderRadius: '8px', cursor: 'pointer',
-  minHeight: '44px',
-}
-
-export function AddStockModal({ isOpen, onClose, stock, onSubmit, formLoading, formError: serverError }: AddStockModalProps) {
+export function AddStockModal({
+  isOpen,
+  onClose,
+  stock,
+  onSubmit,
+  formLoading,
+  formError: serverError,
+}: AddStockModalProps) {
   const [formProduct, setFormProduct] = useState('')
   const [formQuantity, setFormQuantity] = useState('')
   const [formNote, setFormNote] = useState('Subah ki delivery')
@@ -36,19 +29,21 @@ export function AddStockModal({ isOpen, onClose, stock, onSubmit, formLoading, f
 
   useEffect(() => {
     if (isOpen) {
-      if (!formProduct && stock.length > 0) {
+      if (stock.length > 0) {
         setFormProduct(stock[0].id)
+      } else {
+        setFormProduct('')
       }
       setFormQuantity('')
       setFormNote('Subah ki delivery')
       setLocalError(null)
     }
-  }, [isOpen, stock, formProduct])
+  }, [isOpen, stock])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLocalError(null)
-    
+
     if (!formProduct) {
       setLocalError('Product zaroor select karo')
       return
@@ -65,17 +60,24 @@ export function AddStockModal({ isOpen, onClose, stock, onSubmit, formLoading, f
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Stock Daalo (IN)">
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Dropdown Menu of Products / Stock */}
         <FormField
-          label="Kaunsa Maal Aya Hai?"
+          label="Kaunsa Maal Aya Hai? (Select Product)"
           as="select"
           required
           value={formProduct}
-          onChange={e => setFormProduct(e.target.value)}
+          onChange={(e) => setFormProduct(e.target.value)}
         >
-          <option value="" disabled>Chuno...</option>
-          {stock.map(p => (
-            <option key={p.id} value={p.id}>{p.name} {p.nameUrdu ? `(${p.nameUrdu})` : ''}</option>
+          {stock.length === 0 ? (
+            <option value="" disabled>
+              Koi product nahi mila
+            </option>
+          ) : null}
+          {stock.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} {p.nameUrdu ? `(${p.nameUrdu})` : ''}
+            </option>
           ))}
         </FormField>
 
@@ -87,7 +89,7 @@ export function AddStockModal({ isOpen, onClose, stock, onSubmit, formLoading, f
           step="0.1"
           placeholder="e.g. 50"
           value={formQuantity}
-          onChange={e => setFormQuantity(e.target.value)}
+          onChange={(e) => setFormQuantity(e.target.value)}
           autoFocus
         />
 
@@ -96,23 +98,29 @@ export function AddStockModal({ isOpen, onClose, stock, onSubmit, formLoading, f
           type="text"
           placeholder="e.g. Subah ki delivery, Vendor name..."
           value={formNote}
-          onChange={e => setFormNote(e.target.value)}
+          onChange={(e) => setFormNote(e.target.value)}
         />
 
         {displayError && (
-          <div style={{
-            padding: '10px 14px', backgroundColor: '#FEE2E2', color: '#991B1B',
-            borderRadius: '8px', fontSize: '0.85rem',
-          }}>
+          <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">
             ⚠ {displayError}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-          <button type="button" onClick={onClose} disabled={formLoading} style={secondaryBtnStyle}>
+        <div className="flex gap-3 justify-end mt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={formLoading}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+          >
             Cancel
           </button>
-          <button type="submit" disabled={formLoading} style={primaryBtnStyle}>
+          <button
+            type="submit"
+            disabled={formLoading || stock.length === 0}
+            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
+          >
             {formLoading ? 'Daal rahey hain...' : 'Save Karo'}
           </button>
         </div>

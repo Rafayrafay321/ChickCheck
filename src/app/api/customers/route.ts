@@ -5,9 +5,33 @@ import type { CustomerInput } from '@/shared/types'
 export async function GET() {
   try {
     const customers = await db.customer.findMany({
+      include: {
+        invoices: {
+          where: { status: { notIn: ['PAID', 'CANCELLED'] } },
+          select: { totalAmount: true, paidAmount: true },
+        },
+      },
       orderBy: { name: 'asc' },
     })
-    return NextResponse.json({ success: true, data: customers })
+
+    const data = customers.map((c) => {
+      const dynamicUdhaar = c.invoices.reduce(
+        (sum, inv) => sum + Math.max(0, inv.totalAmount - inv.paidAmount),
+        0
+      )
+      return {
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        phone: c.phone,
+        address: c.address,
+        totalUdhaar: dynamicUdhaar,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      }
+    })
+
+    return NextResponse.json({ success: true, data })
   } catch (e) {
     return NextResponse.json({ success: false, error: String(e) }, { status: 500 })
   }

@@ -82,6 +82,9 @@ export const api = {
     const params = new URLSearchParams()
     if (filters?.status) params.set('status', filters.status)
     if (filters?.customerId) params.set('customerId', filters.customerId)
+    if (filters?.date) params.set('date', filters.date)
+    if (filters?.startDate) params.set('startDate', filters.startDate)
+    if (filters?.endDate) params.set('endDate', filters.endDate)
     const qs = params.toString()
     return request(`/api/orders${qs ? `?${qs}` : ''}`)
   },

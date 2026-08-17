@@ -2,12 +2,41 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import type { SupplierPurchaseInput } from '@/shared/types'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const date = searchParams.get('date')
+    const supplierName = searchParams.get('supplierName')
+    const all = searchParams.get('all')
+
+    const where: Record<string, unknown> = {}
+    if (supplierName) where.supplierName = { contains: supplierName }
+
+    if (date) {
+      const start = new Date(date)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(date)
+      end.setDate(end.getDate() + 1)
+      end.setHours(0, 0, 0, 0)
+      where.purchaseDate = { gte: start, lt: end }
+    } else if (all === 'true') {
+      // No date filter
+    } else {
+      // Default: Active session or today
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const latestEod = await db.endOfDay.findFirst({
+        orderBy: { createdAt: 'desc' },
+      })
+      const sessionStart = latestEod ? latestEod.createdAt : today
+      where.purchaseDate = { gte: sessionStart }
+    }
+
     const purchases = await db.supplierPurchase.findMany({
+      where,
       orderBy: { purchaseDate: 'desc' },
-      take: 50,
     })
+
     return NextResponse.json({ success: true, data: purchases })
   } catch (e) {
     return NextResponse.json({ success: false, error: String(e) }, { status: 500 })
@@ -41,7 +70,7 @@ export async function POST(request: Request) {
 
     const dud = body.dudWeight ?? 0
     const netWeight = Math.max(0, body.grossWeight - dud)
-    const ratePerKg = todayRate.supplyRate
+    const ratePerKg = body.ratePerKg && Number(body.ratePerKg) > 0 ? Number(body.ratePerKg) : todayRate.supplyRate
     const totalAmount = netWeight * ratePerKg
     const cashPaid = body.cashPaid ?? 0
 
@@ -57,7 +86,21 @@ export async function POST(request: Request) {
       },
     })
 
-    // Auto-update Live Hen StockEntry IN
+    // Upsert today's LiveWeightPool and increment purchasesWeight
+    await db.liveWeightPool.upsert({
+      where: { date: today },
+      update: {
+        purchasesWeight: { increment: netWeight },
+      },
+      create: {
+        date: today,
+        openingWeight: 0,
+        purchasesWeight: netWeight,
+        soldWeight: 0,
+      },
+    })
+
+    // Auto-update Live Hen StockEntry IN for legacy ledger compatibility
     const liveHenProduct = await db.product.findFirst({
       where: { name: { contains: 'Live' } },
     })

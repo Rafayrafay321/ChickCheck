@@ -32,10 +32,21 @@ interface Invoice {
   }
 }
 
+function getTodayStr() {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Filters — default to today
+  const [filterDate, setFilterDate] = useState<string>(getTodayStr())
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [search, setSearch] = useState('')
 
@@ -49,6 +60,7 @@ export default function InvoicesPage() {
       setError(null)
       const query = new URLSearchParams()
       if (statusFilter) query.set('status', statusFilter)
+      if (filterDate) query.set('date', filterDate)
 
       const res = await fetch(`/api/invoices?${query.toString()}`)
       const json = await res.json()
@@ -63,7 +75,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter])
+  }, [statusFilter, filterDate])
 
   useEffect(() => {
     fetchInvoices()
@@ -78,8 +90,8 @@ export default function InvoicesPage() {
   const handleRecordPayment = async (data: {
     invoiceId: string
     customerId: string
-    amount: number;
-    method: string;
+    amount: number
+    method: string
     note?: string
   }) => {
     try {
@@ -100,58 +112,129 @@ export default function InvoicesPage() {
     }
   }
 
+  const todayStr = getTodayStr()
+  const isToday = filterDate === todayStr
+  const isAllDates = !filterDate
+  const totalBilled = filtered.reduce((s, i) => s + i.totalAmount, 0)
+  const totalPaid = filtered.reduce((s, i) => s + i.paidAmount, 0)
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">🧾 Bill (Invoices)</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Tamaam bills dekhein, customer payments record karein, aur PDF print karein
+          <p className="text-xs text-slate-500 mt-0.5">
+            {isToday ? 'Aaj ke tamam bills aur wasooli' : isAllDates ? 'Tamam pichlay bills' : `Bills baraye ${filterDate}`}
           </p>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex gap-3 flex-wrap items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Invoice # ya Grahak name se search..."
-          className="flex-1 min-w-48 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-        />
+      {/* Clean Streamlined Filters & Summary Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-sm">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Quick Date Toggle Pills */}
+          <div className="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200/60">
+            <button
+              type="button"
+              onClick={() => setFilterDate(todayStr)}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                isToday
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Aaj (Today)
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterDate('')}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                isAllDates
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Tamam (All)
+            </button>
+          </div>
 
-        {(['', 'UNPAID', 'PARTIAL', 'PAID'] as const).map((st) => (
-          <button
-            key={st}
-            onClick={() => setStatusFilter(st)}
-            className={`px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
-              statusFilter === st
-                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-            }`}
+          {/* Custom Date Picker */}
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
+          />
+
+          {/* Status Dropdown */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
           >
-            {st === '' ? 'Sab Status' : st}
-          </button>
-        ))}
+            <option value="">Sab Status</option>
+            <option value="UNPAID">🔴 UNPAID</option>
+            <option value="PARTIAL">🟡 PARTIAL</option>
+            <option value="PAID">🟢 PAID</option>
+          </select>
+
+          {/* Search Box */}
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="🔍 Search customer / #"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-hidden min-w-[160px]"
+          />
+        </div>
+
+        {/* Counter Badge & Reset */}
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Total ({filtered.length})
+            </span>
+            <span className="text-xs font-bold text-slate-900">
+              Rs {totalBilled.toLocaleString('en-PK')}{' '}
+              <span className="text-emerald-600 font-normal">
+                (Paid: Rs {totalPaid.toLocaleString('en-PK')})
+              </span>
+            </span>
+          </div>
+          {(!isToday || statusFilter || search) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterDate(todayStr)
+                setStatusFilter('')
+                setSearch('')
+              }}
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer ml-1"
+            >
+              Reset
+            </button>
+          )}
+        </div>
       </div>
 
-      {error && (
+      {/* Invoices List / Table */}
+      {loading ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400 text-sm animate-pulse">
+          Bills load ho rahe hain...
+        </div>
+      ) : error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
           ⚠ {error}
-        </div>
-      )}
-
-      {/* Invoices Table */}
-      {loading ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-500 text-sm">
-          Invoices load ho rahe hain...
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState
           emoji="🧾"
-          title="Koi Invoice nahi mila"
-          description="Orders page par ja kar naya order deliver ya confirm karein"
+          title="Koi Bill Nahi Mila"
+          description={
+            isToday
+              ? 'Aaj abhi tak koi bill create nahi hua.'
+              : 'Is date ya filter par koi bill record nahi mila.'
+          }
         />
       ) : (
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -159,7 +242,7 @@ export default function InvoicesPage() {
             <table className="w-full border-collapse text-sm text-left">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  {['Invoice ID', 'Customer', 'Items Count', 'Total Bill', 'Paid', 'Balance Due', 'Status', 'Actions'].map((h) => (
+                  {['Invoice #', 'Customer', 'Date / Time', 'Total Raqam', 'Wasool (Paid)', 'Baqi (Balance)', 'Status', 'Action'].map((h) => (
                     <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       {h}
                     </th>
@@ -168,47 +251,49 @@ export default function InvoicesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((inv) => {
-                  const balance = Math.max(0, inv.totalAmount - inv.paidAmount)
+                  const balance = inv.totalAmount - inv.paidAmount
                   return (
-                    <tr
-                      key={inv.id}
-                      className="hover:bg-slate-50/50 transition-colors"
-                    >
-                      <td className="px-4 py-4 font-semibold text-slate-500 whitespace-nowrap">
+                    <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-4 font-mono font-bold text-slate-900 text-xs">
                         #{inv.id.slice(-6).toUpperCase()}
                       </td>
                       <td className="px-4 py-4 font-semibold text-slate-900">
                         {inv.customer.name}
                       </td>
-                      <td className="px-4 py-4 text-slate-500">
-                        {inv.order?.items?.length || 0} items
+                      <td className="px-4 py-4 text-slate-500 text-xs">
+                        {new Date(inv.createdAt).toLocaleDateString()}{' '}
+                        <span className="text-slate-400 font-mono">
+                          {new Date(inv.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </td>
-                      <td className="px-4 py-4 font-bold text-slate-900">
+                      <td className="px-4 py-4 font-bold text-slate-900 text-sm">
                         Rs {inv.totalAmount.toLocaleString('en-PK')}
                       </td>
-                      <td className="px-4 py-4 font-semibold text-emerald-600">
+                      <td className="px-4 py-4 font-semibold text-emerald-600 text-sm">
                         Rs {inv.paidAmount.toLocaleString('en-PK')}
                       </td>
-                      <td className="px-4 py-4 font-bold text-red-600">
-                        Rs {balance.toLocaleString('en-PK')}
+                      <td className="px-4 py-4 font-bold text-sm">
+                        <span className={balance > 0 ? 'text-red-600' : 'text-slate-400'}>
+                          Rs {balance.toLocaleString('en-PK')}
+                        </span>
                       </td>
                       <td className="px-4 py-4">
-                        <Badge variant={inv.status.toLowerCase() as 'paid' | 'partial' | 'unpaid'} />
+                        <Badge variant={inv.status.toLowerCase() as 'unpaid' | 'partial' | 'paid'} />
                       </td>
-                      <td className="px-4 py-4 text-right">
-                        <div className="flex gap-2 justify-end whitespace-nowrap">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => setViewModalTarget(inv)}
-                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
+                            className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer"
                           >
-                            🖨️ Bill Print
+                            👁 Dekho
                           </button>
                           {inv.status !== 'PAID' && (
                             <button
                               onClick={() => setPaymentModalTarget(inv)}
-                              className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 active:scale-[0.98] cursor-pointer"
+                              className="rounded-md bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white shadow-2xs cursor-pointer"
                             >
-                              💳 Wasool (Pay)
+                              💳 Wasooli
                             </button>
                           )}
                         </div>
@@ -222,7 +307,15 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* Record Payment Modal */}
+      {/* Modals */}
+      {viewModalTarget && (
+        <InvoiceViewModal
+          isOpen={!!viewModalTarget}
+          onClose={() => setViewModalTarget(null)}
+          invoice={viewModalTarget}
+        />
+      )}
+
       {paymentModalTarget && (
         <RecordPaymentModal
           isOpen={!!paymentModalTarget}
@@ -235,15 +328,6 @@ export default function InvoicesPage() {
             paidAmount: paymentModalTarget.paidAmount,
           }}
           onSubmit={handleRecordPayment}
-        />
-      )}
-
-      {/* Invoice View & Print Modal */}
-      {viewModalTarget && (
-        <InvoiceViewModal
-          isOpen={!!viewModalTarget}
-          onClose={() => setViewModalTarget(null)}
-          invoice={viewModalTarget}
         />
       )}
     </div>

@@ -2,15 +2,39 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import type { ExpenseInput } from '@/shared/types'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const { searchParams } = new URL(request.url)
+    const date = searchParams.get('date')
+    const category = searchParams.get('category')
+    const all = searchParams.get('all')
+
+    const where: Record<string, unknown> = {}
+    if (category) where.category = category
+
+    if (date) {
+      const start = new Date(date)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(date)
+      end.setDate(end.getDate() + 1)
+      end.setHours(0, 0, 0, 0)
+      where.date = { gte: start, lt: end }
+    } else if (all === 'true') {
+      // No date filter — return all history
+    } else {
+      // Default: Active session
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const latestEod = await db.endOfDay.findFirst({
+        orderBy: { createdAt: 'desc' },
+      })
+      const sessionStart = latestEod ? latestEod.createdAt : today
+      where.date = { gte: sessionStart }
+    }
 
     const expenses = await db.expense.findMany({
-      where: {
-        date: { gte: today },
-      },
+      where,
       orderBy: { createdAt: 'desc' },
     })
 

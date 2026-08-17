@@ -38,10 +38,10 @@ export async function POST(request: Request) {
 
       // 3. Recalculate customer total udhaar from all unpaid invoices
       const unpaid = await tx.invoice.aggregate({
-        where: { customerId: data.customerId, status: { not: 'PAID' } },
+        where: { customerId: data.customerId, status: { notIn: ['PAID', 'CANCELLED'] } },
         _sum: { totalAmount: true, paidAmount: true }
       })
-      const totalUdhaar = (unpaid._sum.totalAmount ?? 0) - (unpaid._sum.paidAmount ?? 0)
+      const totalUdhaar = Math.max(0, (unpaid._sum.totalAmount ?? 0) - (unpaid._sum.paidAmount ?? 0))
 
       await tx.customer.update({
         where: { id: data.customerId },

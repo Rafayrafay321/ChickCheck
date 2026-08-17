@@ -29,7 +29,9 @@ export interface ProductInput {
   unit: 'kg' | 'piece'
   pricingType?: 'MULTIPLIER' | 'FIXED'
   defaultMultiplier?: number
-  pricePerUnit: number
+  pricePerUnit?: number
+  isExternal?: boolean
+  isByproduct?: boolean // Kaleji, Pota, Wings, Necks — no live pool deduction
 }
 
 
@@ -42,6 +44,7 @@ export interface SupplierPurchaseInput {
   supplierName: string
   grossWeight: number
   dudWeight?: number
+  ratePerKg?: number
   cashPaid?: number
 }
 
@@ -96,6 +99,9 @@ export interface EndOfDayInput {
 export interface OrderFilters {
   status?: string
   customerId?: string
+  date?: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface InvoiceFilters {

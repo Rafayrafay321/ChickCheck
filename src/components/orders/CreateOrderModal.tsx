@@ -269,7 +269,7 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
           <button
             type="submit"
             disabled={formLoading || !dailyRate}
-            className="py-2.5 px-4 rounded-lg cursor-pointer border-none bg-primary text-white font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50"
+            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
           >
             {formLoading ? 'Ban raha hai...' : 'Order Confirm Karein'}
           </button>

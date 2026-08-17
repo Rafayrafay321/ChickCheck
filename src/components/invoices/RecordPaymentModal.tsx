@@ -139,7 +139,7 @@ export function RecordPaymentModal({ isOpen, onClose, invoice, onSubmit }: Recor
           <button
             type="submit"
             disabled={submitting}
-            className="py-2.5 px-4 rounded-lg border-none bg-primary text-white font-semibold hover:bg-primary-hover cursor-pointer transition-colors disabled:opacity-50 min-h-11"
+            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
           >
             {submitting ? 'Saving...' : 'Payment Save Karein'}
           </button>

@@ -80,17 +80,37 @@ model Product {
   pricingType       String   @default("MULTIPLIER") // 'MULTIPLIER' | 'FIXED'
   defaultMultiplier Float?   // e.g. 1.5 for Meat, 2.0 for Boneless, 1.6 for Tikka
   pricePerUnit      Float    @default(0) // Fixed daily price if pricingType === 'FIXED'
+  isExternal        Boolean  @default(false) // true = external vendor retail item, false = hen-derived cut
+  isByproduct       Boolean  @default(false) // true = Kaleji, Pota, Wings, Necks — NO live pool deduction
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  orderItems   OrderItem[]
-  stockEntries StockEntry[]
-  multipliers  CustomerMultiplier[]
-  stockAudits  DailyStockAudit[]
+  orderItems         OrderItem[]
+  stockEntries       StockEntry[]
+  multipliers        CustomerMultiplier[]
+  stockAudits        DailyStockAudit[]
+  emergencyPurchases EmergencyPurchase[]
 
   @@map("products")
 }
+
+// ─── LIVE WEIGHT POOL (SHARED DAILY HEN INVENTORY) ────────────────
+model LiveWeightPool {
+  id              String   @id @default(cuid())
+  date            DateTime @unique // YYYY-MM-DD
+  openingWeight   Float    @default(0) // Carried over from previous day
+  purchasesWeight Float    @default(0) // Sum of SupplierPurchase.netWeight today
+  soldWeight      Float    @default(0) // Sum of delivered HEN_DERIVED OrderItems today
+  closingWeight   Float?   // Physical count at EOD
+  variance        Float?   // Physical closing - (opening + purchases - sold)
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("live_weight_pools")
+}
+
 
 // ─── CUSTOMER MULTIPLIER OVERRIDES ──────────────────────────────
 model CustomerMultiplier {
@@ -139,11 +159,31 @@ model StockEntry {
   product   Product  @relation(fields: [productId], references: [id])
   type      String   // 'IN' | 'OUT'
   quantity  Float
+  source    String?  // null=normal, 'EMERGENCY'=from emergency cut purchase, 'EMERGENCY_HEN'=from emergency live hen
   note      String?
   entryDate DateTime @default(now())
   createdAt DateTime @default(now())
 
   @@map("stock_entries")
+}
+
+// ─── EMERGENCY / SHORTFALL PURCHASES ───────────────────────────
+// Used when shop buys ready-cut maal (Boneless, Kaleji etc.) OR
+// extra Live Hen from outside at a different (market) rate.
+model EmergencyPurchase {
+  id           String   @id @default(cuid())
+  isLiveHen    Boolean  @default(false) // true = bought live hen from outside
+  productId    String?                  // null when isLiveHen=true
+  product      Product? @relation(fields: [productId], references: [id])
+  supplierName String?
+  quantity     Float                    // kg
+  costPerKg    Float                    // market rate paid
+  totalCost    Float                    // quantity * costPerKg
+  note         String?
+  purchaseDate DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@map("emergency_purchases")
 }
 
 // ─── ORDERS ──────────────────────────────────────────────────────

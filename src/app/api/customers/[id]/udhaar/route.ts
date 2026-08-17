@@ -9,9 +9,31 @@ export async function GET(
     const { id } = await params
     const customer = await db.customer.findUnique({
       where: { id },
-      select: { id: true, name: true, totalUdhaar: true }
+      include: {
+        invoices: {
+          where: { status: { notIn: ['PAID', 'CANCELLED'] } },
+          select: { totalAmount: true, paidAmount: true },
+        },
+      },
     })
-    return NextResponse.json({ success: true, data: customer })
+
+    if (!customer) {
+      return NextResponse.json({ success: false, error: 'Customer nahi mila' }, { status: 404 })
+    }
+
+    const dynamicUdhaar = customer.invoices.reduce(
+      (sum, inv) => sum + Math.max(0, inv.totalAmount - inv.paidAmount),
+      0
+    )
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: customer.id,
+        name: customer.name,
+        totalUdhaar: dynamicUdhaar,
+      },
+    })
   } catch (e) {
     return NextResponse.json({ success: false, error: String(e) }, { status: 500 })
   }

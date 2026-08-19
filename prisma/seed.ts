@@ -7,7 +7,7 @@ async function main() {
 
   const defaultProducts = [
     {
-      name: 'Live Hen (Zinda Murgi)',
+      name: 'Zinda Murgi',
       nameUrdu: 'زندہ مرغی',
       unit: 'kg',
       pricingType: 'MULTIPLIER',
@@ -15,8 +15,8 @@ async function main() {
       pricePerUnit: 0,
     },
     {
-      name: 'Chicken Meat (Safi Meat)',
-      nameUrdu: 'صافی مرغی',
+      name: 'Ghost',
+      nameUrdu: 'گوشت',
       unit: 'kg',
       pricingType: 'MULTIPLIER',
       defaultMultiplier: 1.5,
@@ -31,15 +31,15 @@ async function main() {
       pricePerUnit: 0,
     },
     {
-      name: 'Tikka Cut',
-      nameUrdu: 'ٹکہ کٹ',
+      name: 'Tikka',
+      nameUrdu: 'ٹکہ',
       unit: 'kg',
       pricingType: 'MULTIPLIER',
       defaultMultiplier: 1.6,
       pricePerUnit: 0,
     },
     {
-      name: 'Kalagi (Liver)',
+      name: 'Kalagi',
       nameUrdu: 'کلیجی',
       unit: 'kg',
       pricingType: 'FIXED',
@@ -47,7 +47,7 @@ async function main() {
       pricePerUnit: 300,
     },
     {
-      name: 'Poota (Gizzard)',
+      name: 'Poota',
       nameUrdu: 'پوٹا',
       unit: 'kg',
       pricingType: 'FIXED',
@@ -55,7 +55,7 @@ async function main() {
       pricePerUnit: 250,
     },
     {
-      name: 'Neck (Gardan)',
+      name: 'Gardan',
       nameUrdu: 'گردن',
       unit: 'kg',
       pricingType: 'FIXED',
@@ -63,7 +63,7 @@ async function main() {
       pricePerUnit: 200,
     },
     {
-      name: 'Wings (Parr)',
+      name: 'Wings',
       nameUrdu: 'پر',
       unit: 'kg',
       pricingType: 'FIXED',

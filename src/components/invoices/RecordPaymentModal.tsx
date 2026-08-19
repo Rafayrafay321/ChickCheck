@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui/Modal'
-import { FormField } from '@/components/ui/FormField'
+
+const INPUT_CLASS = 'w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-blue-500 focus:outline-hidden'
 
 interface RecordPaymentModalProps {
   isOpen: boolean
@@ -40,106 +41,73 @@ export function RecordPaymentModal({ isOpen, onClose, invoice, onSubmit }: Recor
     e.preventDefault()
     if (!invoice) return
     setError(null)
-
-    const numAmount = parseFloat(amount)
-    if (!numAmount || numAmount <= 0) {
-      setError('Amount sahi enter karein')
-      return
-    }
-    if (numAmount > remaining) {
-      setError(`Payment amount baki balance (Rs ${remaining}) se zyada nahi ho sakti`)
-      return
-    }
+    const num = parseFloat(amount)
+    if (!num || num <= 0) { setError('Amount daalo'); return }
+    if (num > remaining) { setError(`Rs ${remaining} se zyada nahi`); return }
 
     setSubmitting(true)
-    const result = await onSubmit({
-      invoiceId: invoice.id,
-      customerId: invoice.customerId,
-      amount: numAmount,
-      method,
-      note: note.trim() || undefined,
-    })
+    const result = await onSubmit({ invoiceId: invoice.id, customerId: invoice.customerId, amount: num, method, note: note.trim() || undefined })
     setSubmitting(false)
-
-    if (result.success) {
-      onClose()
-    } else {
-      setError(result.error || 'Payment save fail hua')
-    }
+    if (result.success) { onClose() } else { setError(result.error || 'Save fail') }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Payment Record Karein">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <Modal isOpen={isOpen} onClose={onClose} title="Payment Record">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {error && (
-          <div className="p-3 bg-red-500/15 text-red-500 rounded-lg text-xs font-medium">
-            {error}
-          </div>
+          <div className="p-2.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">{error}</div>
         )}
 
-        <div className="p-3.5 bg-bg rounded-lg border border-border flex flex-col gap-1 text-xs">
+        {/* Invoice summary */}
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs space-y-1">
           <div className="flex justify-between">
-            <span className="text-text-secondary">Customer:</span>
-            <strong className="text-text-primary">{invoice.customerName}</strong>
+            <span className="text-slate-500">Customer</span>
+            <strong className="text-slate-900">{invoice.customerName}</strong>
           </div>
           <div className="flex justify-between">
-            <span className="text-text-secondary">Total Bill:</span>
+            <span className="text-slate-500">Bill</span>
             <span>Rs {invoice.totalAmount.toLocaleString('en-PK')}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-text-secondary">Pehle Se Paid:</span>
-            <span className="text-green-600">Rs {invoice.paidAmount.toLocaleString('en-PK')}</span>
+            <span className="text-slate-500">Paid</span>
+            <span className="text-emerald-600">Rs {invoice.paidAmount.toLocaleString('en-PK')}</span>
           </div>
-          <div className="flex justify-between border-t border-border pt-1.5 mt-1">
-            <span className="font-semibold text-text-primary">Baki Dena Hai:</span>
-            <strong className="text-red-500 text-sm">Rs {remaining.toLocaleString('en-PK')}</strong>
+          <div className="flex justify-between border-t border-slate-200 pt-1">
+            <span className="font-bold text-slate-700">Baqi</span>
+            <strong className="text-red-600">Rs {remaining.toLocaleString('en-PK')}</strong>
           </div>
         </div>
 
-        <FormField
-          label="Wasool Shuda Amount (PKR)"
-          required
-          type="number"
-          min="1"
-          max={remaining}
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
+        {/* Amount + Method */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[11px] font-medium text-slate-500 mb-1">Amount (Rs)</label>
+            <input type="number" min="1" max={remaining} required value={amount} onChange={(e) => setAmount(e.target.value)} className={INPUT_CLASS} />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-slate-500 mb-1">Method</label>
+            <select value={method} onChange={(e) => setMethod(e.target.value)} className={`${INPUT_CLASS} cursor-pointer`}>
+              <option value="CASH">Cash</option>
+              <option value="JAZZCASH">JazzCash</option>
+              <option value="EASYPAISA">EasyPaisa</option>
+              <option value="BANK">Bank</option>
+            </select>
+          </div>
+        </div>
 
-        <FormField
-          as="select"
-          label="Payment Method"
-          required
-          value={method}
-          onChange={(e) => setMethod(e.target.value)}
-        >
-          <option value="CASH"> CASH</option>
-          <option value="JAZZCASH">JazzCash</option>
-          <option value="EASYPAISA"> EasyPaisa</option>
-          <option value="BANK">Bank Transfer</option>
-        </FormField>
+        {/* Note */}
+        <div>
+          <label className="block text-[11px] font-medium text-slate-500 mb-1">Note (Optional)</label>
+          <input type="text" placeholder="Detail..." value={note} onChange={(e) => setNote(e.target.value)} className={INPUT_CLASS} />
+        </div>
 
-        <FormField
-          label="Note (Optional)"
-          type="text"
-          placeholder="e.g. Received by Asghar..."
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-
-        <div className="flex gap-3 justify-end mt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="py-2.5 px-4 rounded-lg border border-border bg-transparent text-text-secondary hover:bg-bg cursor-pointer transition-colors"
-          >Cancel</button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
-          >
-            {submitting ? 'Saving...' : 'Payment Save Karein'}
+        {/* Actions */}
+        <div className="flex gap-3 justify-end">
+          <button type="button" onClick={onClose} disabled={submitting} className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 cursor-pointer disabled:opacity-50">
+            Cancel
+          </button>
+          <button type="submit" disabled={submitting} className="rounded-lg bg-blue-600 hover:bg-blue-700 px-6 py-2.5 text-sm font-bold text-white transition-all cursor-pointer disabled:opacity-50">
+            {submitting ? 'Saving...' : 'Save'}
           </button>
         </div>
       </form>

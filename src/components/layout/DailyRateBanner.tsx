@@ -24,7 +24,7 @@ export function DailyRateBanner() {
           <span className="text-amber-500">Rate load ho raha hai...</span>
         ) : dailyRate ? (
           <>
-            <span><strong>Farm Rate:</strong> Rs {dailyRate.farmRate}/kg</span>
+            <span><strong>Farm Rate:</strong> <strong className="font-mono text-amber-900 font-bold">Rs {dailyRate.farmRate}</strong>/kg</span>
             <button
               onClick={() => setIsModalOpen(true)}
               className="ml-1 rounded-md border border-amber-300 bg-white px-2 py-0.5 text-[0.7rem] font-medium text-amber-600 shadow-sm transition-all hover:bg-amber-50 active:scale-[0.98] cursor-pointer"

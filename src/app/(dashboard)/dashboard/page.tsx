@@ -84,18 +84,19 @@ export default function DashboardPage() {
           </Link>
           <Link
             href="/stock"
-            className="inline-flex items-center justify-center px-3.5 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-medium transition-all active:scale-[0.98] no-underline"
-          >Maal Kharid
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm text-sm font-semibold transition-all active:scale-[0.98] no-underline"
+          > <span>+</span> Maal Kharid
           </Link>
           <Link
             href="/expenses"
-            className="inline-flex items-center justify-center px-3.5 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-medium transition-all active:scale-[0.98] no-underline"
-          >Kharcha
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm text-sm font-semibold transition-all active:scale-[0.98] no-underline"
+          > <span>+</span> Kharcha
           </Link>
           <Link
             href="/end-of-day"
             className="inline-flex items-center justify-center px-3.5 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 shadow-sm text-sm font-medium transition-all active:scale-[0.98] no-underline"
-          >EOD Hisaab
+          >
+            Day Closing
           </Link>
         </div>
       </div>

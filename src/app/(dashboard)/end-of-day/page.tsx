@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { EodAuditForm } from '@/components/end-of-day/EodAuditForm'
 import { EodHistorySidebar } from '@/components/end-of-day/EodHistorySidebar'
-import type { LivePool, EODReport } from '@/components/end-of-day/types'
+import type { LivePool, EODReport, ProductItem } from '@/components/end-of-day/types'
 
 export default function EndOfDayPage() {
   const [livePool, setLivePool] = useState<LivePool | null>(null)
+  const [products, setProducts] = useState<ProductItem[]>([])
   const [reports, setReports] = useState<EODReport[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,13 +21,17 @@ export default function EndOfDayPage() {
   async function loadData() {
     try {
       setLoading(true)
-      const [stockRes, eodRes] = await Promise.all([
+      const [stockRes, prodRes, eodRes] = await Promise.all([
         api.getStockSummary(),
+        api.getProducts(),
         api.getEndOfDayHistory(),
       ])
 
       if (stockRes.success && stockRes.data) {
         setLivePool((stockRes.data as { livePool: LivePool }).livePool)
+      }
+      if (prodRes.success && Array.isArray(prodRes.data)) {
+        setProducts(prodRes.data as ProductItem[])
       }
       if (eodRes.success && Array.isArray(eodRes.data)) {
         setReports(eodRes.data as EODReport[])
@@ -46,6 +50,7 @@ export default function EndOfDayPage() {
   async function handleSubmit(data: {
     retailCashDrawer: number
     liveClosingKg: number
+    audits: Array<{ productId: string; closingKg: number }>
     note?: string
   }) {
     setSubmitError(null)
@@ -56,6 +61,8 @@ export default function EndOfDayPage() {
       const res = await api.submitEndOfDay({
         reportDate: new Date().toISOString(),
         retailCashDrawer: data.retailCashDrawer,
+        liveClosingKg: data.liveClosingKg,
+        audits: data.audits,
         note: data.note,
       })
 
@@ -73,26 +80,35 @@ export default function EndOfDayPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      {/* Reusable Page Header */}
-      <PageHeader
-        title="Din Khatam (End of Day Audit)"
-        subtitle="Shared Live Hen Pool Audit, Cash Drawer Count, aur Net Profit Calculation"
-      />
+    <div className="mx-auto max-w-7xl space-y-4">
+      {/* Header matching Dashboard */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 m-0">Day Closing</h2>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            Audit
+          </span>
+        </div>
+      </div>
 
       {error && <ErrorState message={error} onRetry={loadData} />}
 
-      {/* Main Audit Form & History Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <EodAuditForm
-          livePool={livePool}
-          onSubmit={handleSubmit}
-          submitting={submitting}
-          submitError={submitError}
-          submitSuccess={submitSuccess}
-        />
+      {/* Main Grid: 8-col form + 4-col history */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <div className="lg:col-span-8">
+          <EodAuditForm
+            livePool={livePool}
+            products={products}
+            onSubmit={handleSubmit}
+            submitting={submitting}
+            submitError={submitError}
+            submitSuccess={submitSuccess}
+          />
+        </div>
 
-        <EodHistorySidebar reports={reports} loading={loading} />
+        <div className="lg:col-span-4">
+          <EodHistorySidebar reports={reports} loading={loading} />
+        </div>
       </div>
     </div>
   )

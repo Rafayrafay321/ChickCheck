@@ -111,6 +111,7 @@ export interface RecordPaymentInput {
 export interface EndOfDayInput {
   reportDate: string
   retailCashDrawer: number
+  liveClosingKg?: number
   note?: string
   audits?: StockAuditInput[]
 }

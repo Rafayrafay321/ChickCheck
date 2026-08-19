@@ -5,6 +5,14 @@ export interface LivePool {
   availableWeight: number
 }
 
+export interface ProductItem {
+  id: string
+  name: string
+  nameUrdu: string | null
+  unit: string
+  isByproduct?: boolean
+}
+
 export interface EODReport {
   id: string
   reportDate: string

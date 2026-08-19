@@ -18,7 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/expenses',   label: 'Expenses'  },
   { path: '/invoices',   label: 'Invoices', },
   { path: '/udhaar',     label: 'Udhaar',     },
-  { path: '/end-of-day', label: 'End of Day', },
+  { path: '/end-of-day', label: 'Day Closing', },
 ] as const
 
 interface SidebarProps {

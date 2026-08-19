@@ -107,10 +107,9 @@ export default function LoginPage() {
       <div style={containerStyle}>
         <div style={cardStyle}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <span style={{ fontSize: '3rem' }}>🐔</span>
+            <span style={{ fontSize: '3rem' }}></span>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '8px' }}>Dukaan Setup</h2>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-              Pehli baar? Apni dukaan ka naam aur password set karo
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Pehli baar? Apni dukaan ka naam aur password set karo
             </p>
           </div>
           <form onSubmit={handleSetup}>
@@ -132,7 +131,7 @@ export default function LoginPage() {
             </label>
             {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '12px' }}>{error}</p>}
             <button type="submit" disabled={isLoading} style={buttonStyle}>
-              {isLoading ? 'Wait karo...' : 'Shuru Karo ✅'}
+              {isLoading ? 'Wait karo...' : 'Shuru Karo '}
             </button>
           </form>
         </div>
@@ -144,10 +143,9 @@ export default function LoginPage() {
     <div style={containerStyle}>
       <div style={cardStyle}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <span style={{ fontSize: '3rem' }}>🐔</span>
+          <span style={{ fontSize: '3rem' }}></span>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '8px' }}>Dukaan POS</h2>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-            Password daalo aur shuru karo
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>Password daalo aur shuru karo
           </p>
         </div>
         <form onSubmit={handleLogin}>
@@ -157,7 +155,7 @@ export default function LoginPage() {
           </label>
           {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '12px' }}>{error}</p>}
           <button type="submit" disabled={isLoading} style={buttonStyle}>
-            {isLoading ? 'Wait karo...' : 'Login Karo 🔑'}
+            {isLoading ? 'Wait karo...' : 'Login Karo '}
           </button>
         </form>
       </div>

@@ -69,11 +69,11 @@ export function RecordPaymentModal({ isOpen, onClose, invoice, onSubmit }: Recor
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="💳 Payment Record Karein">
+    <Modal isOpen={isOpen} onClose={onClose} title="Payment Record Karein">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && (
           <div className="p-3 bg-red-500/15 text-red-500 rounded-lg text-xs font-medium">
-            ⚠ {error}
+            {error}
           </div>
         )}
 
@@ -113,10 +113,10 @@ export function RecordPaymentModal({ isOpen, onClose, invoice, onSubmit }: Recor
           value={method}
           onChange={(e) => setMethod(e.target.value)}
         >
-          <option value="CASH">💵 CASH</option>
-          <option value="JAZZCASH">📱 JazzCash</option>
-          <option value="EASYPAISA">📱 EasyPaisa</option>
-          <option value="BANK">🏦 Bank Transfer</option>
+          <option value="CASH"> CASH</option>
+          <option value="JAZZCASH">JazzCash</option>
+          <option value="EASYPAISA"> EasyPaisa</option>
+          <option value="BANK">Bank Transfer</option>
         </FormField>
 
         <FormField
@@ -133,9 +133,7 @@ export function RecordPaymentModal({ isOpen, onClose, invoice, onSubmit }: Recor
             onClick={onClose}
             disabled={submitting}
             className="py-2.5 px-4 rounded-lg border border-border bg-transparent text-text-secondary hover:bg-bg cursor-pointer transition-colors"
-          >
-            Cancel
-          </button>
+          >Cancel</button>
           <button
             type="submit"
             disabled={submitting}

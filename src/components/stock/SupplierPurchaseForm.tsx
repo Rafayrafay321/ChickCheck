@@ -1,263 +1,308 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import Link from 'next/link'
+import { api } from '@/lib/api-client'
 import { useDailyRate } from '@/hooks/useDailyRate'
+import { PurchaseRowItem, type SupplierOption, type PurchaseRowState } from './PurchaseRowItem'
+import { PurchaseGrandTotals } from './PurchaseGrandTotals'
 import type { SupplierPurchaseInput } from '@/shared/types'
 
 interface SupplierPurchaseFormProps {
-  onSubmit: (input: SupplierPurchaseInput) => Promise<{ success: boolean; error?: string }>
+  onSubmit: (input: SupplierPurchaseInput | SupplierPurchaseInput[]) => Promise<{ success: boolean; error?: string }>
   onCancel?: () => void
 }
 
-const DEFAULT_SUPPLIERS = ['Asim', 'Majid', 'Farhan', 'Danish']
+function computeRate(farmRate?: number, ratePremium: number = 4): string {
+  return farmRate !== undefined && farmRate > 0 ? String(farmRate + ratePremium) : ''
+}
+
+function createEmptyRow(supplier?: SupplierOption, farmRate?: number): PurchaseRowState {
+  return {
+    key: Math.random().toString(36).substring(2, 9),
+    supplierId: supplier?.id || '',
+    supplierName: supplier?.name || '',
+    grossWeight: '',
+    dudWeight: '0',
+    ratePerKg: computeRate(farmRate, supplier?.ratePremium ?? 4),
+    cashPaid: '',
+  }
+}
 
 export function SupplierPurchaseForm({ onSubmit, onCancel }: SupplierPurchaseFormProps) {
   const { dailyRate } = useDailyRate()
-  const [selectedSupplier, setSelectedSupplier] = useState<string>('Asim')
-  const [customSupplierName, setCustomSupplierName] = useState<string>('')
-  const [isCustomMode, setIsCustomMode] = useState<boolean>(false)
-  const [supplierList, setSupplierList] = useState<string[]>(DEFAULT_SUPPLIERS)
-
-  const [grossWeight, setGrossWeight] = useState('')
-  const [dudWeight, setDudWeight] = useState('0')
-  const [customRate, setCustomRate] = useState<string>('')
-  const [cashPaid, setCashPaid] = useState('')
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([])
+  const [suppliersLoading, setSuppliersLoading] = useState(true)
+  const [rows, setRows] = useState<PurchaseRowState[]>([createEmptyRow(undefined, dailyRate?.farmRate)])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  // Set default custom rate when dailyRate is loaded
+  // Load active suppliers from database
   useEffect(() => {
-    if (dailyRate?.supplyRate && !customRate) {
-      setCustomRate(String(dailyRate.supplyRate))
-    }
-  }, [dailyRate, customRate])
-
-  // Fetch unique past suppliers from purchases history
-  useEffect(() => {
-    async function loadPastSuppliers() {
+    async function loadSuppliers() {
       try {
-        const res = await fetch('/api/purchases')
-        const json = await res.json()
-        if (json.success && Array.isArray(json.data)) {
-          const pastNames = json.data.map((p: { supplierName: string }) => p.supplierName).filter(Boolean)
-          const merged = Array.from(new Set([...DEFAULT_SUPPLIERS, ...pastNames]))
-          setSupplierList(merged)
-          if (merged.length > 0) setSelectedSupplier(merged[0])
+        setSuppliersLoading(true)
+        const res = await api.getSuppliers(undefined, true)
+        if (res.success && Array.isArray(res.data)) {
+          const list: SupplierOption[] = res.data.map((s) => ({
+            id: s.id,
+            name: s.name,
+            ratePremium: s.ratePremium ?? 4,
+          }))
+          setSuppliers(list)
+
+          if (list.length > 0) {
+            setRows((prev) => {
+              if (prev.length === 1 && prev[0].grossWeight === '') {
+                const first = list[0]
+                return [{
+                  ...prev[0],
+                  supplierId: first.id,
+                  supplierName: first.name,
+                  ratePerKg: prev[0].ratePerKg || computeRate(dailyRate?.farmRate, first.ratePremium),
+                }]
+              }
+              return prev
+            })
+          }
         }
-      } catch {
-        // Fallback to default suppliers
+      } finally {
+        setSuppliersLoading(false)
       }
     }
-    loadPastSuppliers()
+    loadSuppliers()
+  }, [dailyRate?.farmRate])
+
+  // Sync initial rate when dailyRate is ready
+  useEffect(() => {
+    if (dailyRate?.farmRate) {
+      setRows((prev) =>
+        prev.map((row) => {
+          if (row.ratePerKg === '' && row.supplierId) {
+            const sup = suppliers.find((s) => s.id === row.supplierId)
+            return { ...row, ratePerKg: computeRate(dailyRate.farmRate, sup?.ratePremium ?? 4) }
+          }
+          return row
+        })
+      )
+    }
+  }, [dailyRate?.farmRate, suppliers])
+
+  const handleSupplierChange = useCallback((index: number, supplierId: string) => {
+    setRows((prev) => {
+      const next = [...prev]
+      const selected = suppliers.find((s) => s.id === supplierId)
+      if (selected) {
+        const rate = computeRate(dailyRate?.farmRate, selected.ratePremium)
+        next[index] = {
+          ...next[index],
+          supplierId: selected.id,
+          supplierName: selected.name,
+          ratePerKg: rate || next[index].ratePerKg,
+        }
+      }
+      return next
+    })
+  }, [suppliers, dailyRate?.farmRate])
+
+  const updateRowField = useCallback((index: number, field: keyof PurchaseRowState, value: string) => {
+    setRows((prev) => {
+      const next = [...prev]
+      next[index] = { ...next[index], [field]: value }
+      return next
+    })
   }, [])
 
-  const gross = parseFloat(grossWeight) || 0
-  const dud = parseFloat(dudWeight) || 0
-  const netWeight = Math.max(0, gross - dud)
-  const ratePerKg = parseFloat(customRate) || dailyRate?.supplyRate || 0
-  const totalAmount = netWeight * ratePerKg
+  const addRow = useCallback(() => {
+    const usedSupplierIds = new Set(rows.map((r) => r.supplierId))
+    const unused = suppliers.find((s) => !usedSupplierIds.has(s.id)) || suppliers[0]
+    setRows((prev) => [...prev, createEmptyRow(unused, dailyRate?.farmRate)])
+  }, [rows, suppliers, dailyRate?.farmRate])
 
-  function handleSupplierSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const val = e.target.value
-    if (val === '__NEW__') {
-      setIsCustomMode(true)
-      setCustomSupplierName('')
-    } else {
-      setIsCustomMode(false)
-      setSelectedSupplier(val)
-    }
-  }
+  const removeRow = useCallback((index: number) => {
+    setRows((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  // Derived Calculations & Totals
+  const { rowCalculations, totals } = useMemo(() => {
+    const calcs = rows.map((r) => {
+      const gross = parseFloat(r.grossWeight) || 0
+      const dud = parseFloat(r.dudWeight) || 0
+      const net = Math.max(0, gross - dud)
+      const rate = parseFloat(r.ratePerKg) || 0
+      const amount = net * rate
+      const cash = parseFloat(r.cashPaid) || 0
+      return { gross, dud, net, rate, amount, cash }
+    })
+
+    const agg = calcs.reduce(
+      (acc, r) => ({
+        gross: acc.gross + r.gross,
+        dud: acc.dud + r.dud,
+        net: acc.net + r.net,
+        amount: acc.amount + r.amount,
+        cash: acc.cash + r.cash,
+      }),
+      { gross: 0, dud: 0, net: 0, amount: 0, cash: 0 }
+    )
+
+    return { rowCalculations: calcs, totals: agg }
+  }, [rows])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
-    const finalSupplierName = isCustomMode ? customSupplierName.trim() : selectedSupplier.trim()
-
-    if (!finalSupplierName) {
-      setError('Supplier ka naam enter karein')
-      return
-    }
-    if (!gross || gross <= 0) {
-      setError('Gross Weight enter karein')
-      return
-    }
     if (!dailyRate) {
       setError('Pehle aaj ka Farm Rate enter karein!')
       return
     }
-    if (!ratePerKg || ratePerKg <= 0) {
-      setError('Purchasing Rate per kg daalein')
+
+    if (suppliers.length === 0) {
+      setError('Koi supplier registered nahi hai. Pehle Suppliers page se naya supplier add karein.')
       return
     }
 
+    const payloadItems: SupplierPurchaseInput[] = []
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i]
+      const calc = rowCalculations[i]
+
+      if (!r.supplierId || !r.supplierName) {
+        setError(`Row #${i + 1}: Supplier choose karein`)
+        return
+      }
+      if (calc.gross <= 0) {
+        setError(`Row #${i + 1} (${r.supplierName}): Gross Weight daalein`)
+        return
+      }
+      if (calc.rate <= 0) {
+        setError(`Row #${i + 1} (${r.supplierName}): Purchasing Rate per kg daalein`)
+        return
+      }
+
+      payloadItems.push({
+        supplierId: r.supplierId,
+        supplierName: r.supplierName,
+        grossWeight: calc.gross,
+        dudWeight: calc.dud,
+        ratePerKg: calc.rate,
+        cashPaid: calc.cash,
+      })
+    }
+
     setSubmitting(true)
-    const result = await onSubmit({
-      supplierName: finalSupplierName,
-      grossWeight: gross,
-      dudWeight: dud,
-      ratePerKg,
-      cashPaid: parseFloat(cashPaid) || 0,
-    })
+    const result = await onSubmit(payloadItems.length === 1 ? payloadItems[0] : payloadItems)
     setSubmitting(false)
 
     if (!result.success) {
-      setError(result.error || 'Purchase save fail ho gaya')
+      setError(result.error || 'Purchases save fail ho gayi')
     }
+  }
+
+  if (!suppliersLoading && suppliers.length === 0) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center space-y-3">
+        <div className="text-sm font-semibold text-slate-800">
+          Koi Supplier Registered Nahi Hai
+        </div>
+        <p className="text-xs text-slate-500 max-w-md mx-auto">
+          Maal khareedari record karne ke liye pehle Suppliers page par apne suppliers add karein.
+        </p>
+        <div className="pt-2 flex justify-center gap-3">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs"
+            >
+              Cancel
+            </button>
+          )}
+          <Link
+            href="/suppliers"
+            onClick={onCancel}
+            className="inline-flex items-center rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all"
+          >
+            + Suppliers Page Par Jayein
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
         <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">
-          ⚠ {error}
+          {error}
         </div>
       )}
 
-      {!dailyRate && (
+      {dailyRate ? (
+        <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200/80 flex items-center justify-between text-xs text-blue-900">
+          <div>
+            <span>Farm Rate: <strong>Rs {dailyRate.farmRate}</strong></span>
+            <span className="mx-2 text-blue-300">|</span>
+            <span>Standard Supply Rate: <strong>Rs {dailyRate.supplyRate}</strong></span>
+          </div>
+        </div>
+      ) : (
         <div className="p-3 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200">
-          ⚠️ <strong>Aaj Ka Rate Missing Hai!</strong> Pehle top bar par click karke aaj ka Farm Rate set karein.
+          <strong>Aaj Ka Rate Missing Hai!</strong> Pehle top bar par click karke aaj ka Farm Rate set karein.
         </div>
       )}
 
-      {/* Supplier Selection Dropdown & New Supplier Field */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-slate-700">
-            Supplier Name (Chuno ya Naya Daalo)
-          </label>
-          {isCustomMode && (
-            <button
-              type="button"
-              onClick={() => setIsCustomMode(false)}
-              className="text-xs text-blue-600 font-medium hover:underline bg-transparent border-none cursor-pointer"
-            >
-              ← Back to Dropdown
-            </button>
-          )}
-        </div>
-
-        {!isCustomMode ? (
-          <select
-            value={selectedSupplier}
-            onChange={handleSupplierSelectChange}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-          >
-            {supplierList.map((sup) => (
-              <option key={sup} value={sup}>
-                {sup}
-              </option>
-            ))}
-            <option value="__NEW__" className="font-semibold text-blue-600">
-              + Naya Supplier Add Karein...
-            </option>
-          </select>
-        ) : (
-          <input
-            type="text"
-            required
-            autoFocus
-            placeholder="Naye supplier ka naam daalein (e.g. Kamran)..."
-            value={customSupplierName}
-            onChange={(e) => setCustomSupplierName(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+      {/* Rows Container */}
+      <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+        {rows.map((row, idx) => (
+          <PurchaseRowItem
+            key={row.key}
+            index={idx}
+            row={row}
+            calc={rowCalculations[idx]}
+            suppliers={suppliers}
+            canRemove={rows.length > 1}
+            onSupplierChange={handleSupplierChange}
+            onFieldChange={updateRowField}
+            onRemove={removeRow}
           />
-        )}
+        ))}
       </div>
 
-      {/* Weights & Custom Purchasing Rate Grid */}
-      <div className="grid grid-cols-3 gap-3">
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-            Gross Wt (Kg)
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            required
-            placeholder="e.g. 244.5"
-            value={grossWeight}
-            onChange={(e) => setGrossWeight(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          />
-        </div>
+      {/* Add Another Delivery Row */}
+      {suppliers.length > 0 && (
+        <button
+          type="button"
+          onClick={addRow}
+          className="w-full py-2.5 px-4 rounded-xl border border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-50 text-blue-700 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          + Agla Supplier Shamil Karein (Add Delivery Row)
+        </button>
+      )}
 
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-            Dud / Loss (Kg)
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            placeholder="0"
-            value={dudWeight}
-            onChange={(e) => setDudWeight(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          />
-        </div>
+      {/* Batch Grand Totals Footer */}
+      {rows.length > 0 && <PurchaseGrandTotals rowCount={rows.length} totals={totals} />}
 
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-            Rate/Kg (Rs)
-          </label>
-          <input
-            type="number"
-            step="1"
-            required
-            placeholder={dailyRate ? String(dailyRate.supplyRate) : 'Rate'}
-            value={customRate}
-            onChange={(e) => setCustomRate(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm font-semibold transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          />
-        </div>
-      </div>
-
-      <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col gap-1.5 text-xs">
-        <div className="flex justify-between">
-          <span className="text-slate-500">Net Weight:</span>
-          <strong className="text-slate-900 font-semibold">{netWeight.toFixed(1)} Kg</strong>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">Selected Purchasing Rate:</span>
-          <span className="text-slate-900 font-semibold">Rs {ratePerKg} / kg</span>
-        </div>
-        <div className="flex justify-between border-t border-slate-200 pt-2 mt-1">
-          <span className="text-slate-600 font-bold">Total Purchase Amount:</span>
-          <strong className="text-emerald-600 text-sm font-bold">Rs {totalAmount.toLocaleString()}</strong>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">
-          Cash Paid (Optional)
-        </label>
-        <input
-          type="number"
-          step="1"
-          placeholder="e.g. 70000"
-          value={cashPaid}
-          onChange={(e) => setCashPaid(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-        />
-      </div>
-
-      <div className="flex gap-3 justify-end mt-2">
+      {/* Form Action Buttons */}
+      <div className="flex gap-3 justify-end mt-1">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>
         )}
         <button
           type="submit"
-          disabled={submitting || !dailyRate}
-          className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
+          disabled={submitting || suppliers.length === 0}
+          className="rounded-lg bg-blue-600 hover:bg-blue-700 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11 flex-1 sm:flex-initial"
         >
-          {submitting ? 'Saving...' : 'Save Purchase'}
+          {submitting ? 'Saving...' : rows.length > 1 ? `Save All (${rows.length} Deliveries)` : 'Save Purchase Entry'}
         </button>
       </div>
     </form>

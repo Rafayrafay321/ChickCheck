@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { api } from '@/lib/api-client'
 import type { ExpenseInput } from '@/shared/types'
 
 export interface ExpenseData {
@@ -21,10 +22,9 @@ export function useExpenses() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch('/api/expenses')
-      const json = await res.json()
-      if (json.success && Array.isArray(json.data)) {
-        setExpenses(json.data)
+      const res = await api.getExpenses()
+      if (res.success && Array.isArray(res.data)) {
+        setExpenses(res.data as ExpenseData[])
       } else {
         setExpenses([])
       }
@@ -42,17 +42,12 @@ export function useExpenses() {
   const createExpense = async (input: ExpenseInput) => {
     try {
       setError(null)
-      const res = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      })
-      const json = await res.json()
-      if (json.success && json.data) {
-        setExpenses((prev) => [json.data, ...prev])
-        return { success: true, data: json.data }
+      const res = await api.createExpense(input)
+      if (res.success && res.data) {
+        setExpenses((prev) => [res.data as ExpenseData, ...prev])
+        return { success: true, data: res.data as ExpenseData }
       } else {
-        const err = json.error || 'Expense save fail hua'
+        const err = res.error || 'Expense save fail hua'
         setError(err)
         return { success: false, error: err }
       }
@@ -63,7 +58,9 @@ export function useExpenses() {
     }
   }
 
-  const totalExpensesToday = expenses.reduce((sum, e) => sum + e.amount, 0)
+  const totalExpensesToday = useMemo(() => {
+    return expenses.reduce((sum, e) => sum + e.amount, 0)
+  }, [expenses])
 
   return {
     expenses,

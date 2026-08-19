@@ -36,20 +36,54 @@ model DailyRate {
   @@map("daily_rates")
 }
 
+// ─── SUPPLIERS (MURGI SUPPLIERS MASTER) ───────────────────────────
+model Supplier {
+  id           String             @id @default(cuid())
+  name         String             @unique
+  phone        String?
+  address      String?
+  ratePremium  Float              @default(4) // Extra Rs/kg over Farm Rate charged by this supplier
+  totalPayable Float              @default(0) // Running balance (total purchases - total paid)
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  purchases    SupplierPurchase[]
+  payments     SupplierPayment[]
+
+  @@map("suppliers")
+}
+
 // ─── SUPPLIER PURCHASES (ZINDA MURGI) ───────────────────────────
 model SupplierPurchase {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   supplierName String
   grossWeight  Float
-  dudWeight    Float    @default(0) // Mortality / deduction in kg
-  netWeight    Float    // grossWeight - dudWeight
-  ratePerKg    Float    // purchasing rate (supplyRate)
-  totalAmount  Float    // netWeight * ratePerKg
-  cashPaid     Float    @default(0)
-  purchaseDate DateTime @default(now())
-  createdAt    DateTime @default(now())
+  dudWeight    Float     @default(0) // Mortality / deduction in kg
+  netWeight    Float     // grossWeight - dudWeight
+  ratePerKg    Float     // purchasing rate (supplyRate)
+  totalAmount  Float     // netWeight * ratePerKg
+  cashPaid     Float     @default(0)
+  purchaseDate DateTime  @default(now())
+  createdAt    DateTime  @default(now())
 
   @@map("supplier_purchases")
+}
+
+// ─── SUPPLIER PAYMENTS (ADAIYGI) ─────────────────────────────────
+model SupplierPayment {
+  id         String   @id @default(cuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  amount     Float
+  method     String   @default("CASH") // 'CASH' | 'JAZZCASH' | 'EASYPAISA' | 'BANK'
+  note       String?
+  paidAt     DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@map("supplier_payments")
 }
 
 // ─── CUSTOMERS ───────────────────────────────────────────────────

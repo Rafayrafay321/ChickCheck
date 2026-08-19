@@ -1,10 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { api } from '@/lib/api-client'
 import { RecordPaymentModal } from '@/components/invoices/RecordPaymentModal'
 import { InvoiceViewModal } from '@/components/invoices/InvoiceViewModal'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { DateFilterBar, getTodayStr } from '@/components/ui/DateFilterBar'
+import type { RecordPaymentInput } from '@/shared/types'
 
 interface Invoice {
   id: string
@@ -32,60 +36,60 @@ interface Invoice {
   }
 }
 
-function getTodayStr() {
-  const d = new Date()
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Filters — default to today
   const [filterDate, setFilterDate] = useState<string>(getTodayStr())
   const [statusFilter, setStatusFilter] = useState<string>('')
-  const [search, setSearch] = useState('')
+  const [filterCustomer, setFilterCustomer] = useState<string>('')
 
   // Modals
   const [paymentModalTarget, setPaymentModalTarget] = useState<Invoice | null>(null)
   const [viewModalTarget, setViewModalTarget] = useState<Invoice | null>(null)
 
+  const fetchDependencies = useCallback(async () => {
+    try {
+      const res = await api.getCustomers()
+      if (res.success && Array.isArray(res.data)) {
+        setCustomers(res.data as { id: string; name: string }[])
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchDependencies()
+  }, [fetchDependencies])
+
   const fetchInvoices = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const query = new URLSearchParams()
-      if (statusFilter) query.set('status', statusFilter)
-      if (filterDate) query.set('date', filterDate)
-
-      const res = await fetch(`/api/invoices?${query.toString()}`)
-      const json = await res.json()
-      if (json.success && Array.isArray(json.data)) {
-        setInvoices(json.data)
+      const res = await api.getInvoices({
+        status: statusFilter || undefined,
+        customerId: filterCustomer || undefined,
+      })
+      if (res.success && Array.isArray(res.data)) {
+        setInvoices(res.data as Invoice[])
       } else {
         setInvoices([])
-        setError(json.error || 'Invoices load nahi hue')
+        setError(res.error || 'Invoices load nahi hue')
       }
     } catch {
       setError('Connection error')
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, filterDate])
+  }, [statusFilter, filterCustomer])
 
   useEffect(() => {
     fetchInvoices()
   }, [fetchInvoices])
-
-  const filtered = invoices.filter(
-    (inv) =>
-      inv.customer.name.toLowerCase().includes(search.toLowerCase()) ||
-      inv.id.toLowerCase().includes(search.toLowerCase())
-  )
 
   const handleRecordPayment = async (data: {
     invoiceId: string
@@ -95,140 +99,96 @@ export default function InvoicesPage() {
     note?: string
   }) => {
     try {
-      const res = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      const json = await res.json()
-      if (json.success) {
+      const res = await api.recordPayment(data as RecordPaymentInput)
+      if (res.success) {
         await fetchInvoices()
         return { success: true }
       } else {
-        return { success: false, error: json.error || 'Payment save fail hua' }
+        return { success: false, error: res.error || 'Payment save fail hua' }
       }
     } catch {
       return { success: false, error: 'Connection error' }
     }
   }
 
-  const todayStr = getTodayStr()
-  const isToday = filterDate === todayStr
+  const isToday = filterDate === getTodayStr()
   const isAllDates = !filterDate
-  const totalBilled = filtered.reduce((s, i) => s + i.totalAmount, 0)
-  const totalPaid = filtered.reduce((s, i) => s + i.paidAmount, 0)
+  const totalBilled = invoices.reduce((s, i) => s + i.totalAmount, 0)
+  const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0)
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">🧾 Bill (Invoices)</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {isToday ? 'Aaj ke tamam bills aur wasooli' : isAllDates ? 'Tamam pichlay bills' : `Bills baraye ${filterDate}`}
-          </p>
-        </div>
-      </div>
+      {/* Reusable Page Header */}
+      <PageHeader
+        title="Bill (Invoices)"
+        subtitle={isToday ? 'Aaj ke tamam bills aur wasooli' : isAllDates ? 'Tamam pichlay bills' : `Bills baraye ${filterDate}`}
+      />
 
-      {/* Clean Streamlined Filters & Summary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-sm">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Quick Date Toggle Pills */}
-          <div className="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200/60">
-            <button
-              type="button"
-              onClick={() => setFilterDate(todayStr)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                isToday
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Aaj (Today)
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterDate('')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                isAllDates
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Tamam (All)
-            </button>
-          </div>
-
-          {/* Custom Date Picker */}
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
-          />
-
-          {/* Status Dropdown */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
-          >
-            <option value="">Sab Status</option>
-            <option value="UNPAID">🔴 UNPAID</option>
-            <option value="PARTIAL">🟡 PARTIAL</option>
-            <option value="PAID">🟢 PAID</option>
-          </select>
-
-          {/* Search Box */}
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍 Search customer / #"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-hidden min-w-[160px]"
-          />
-        </div>
-
-        {/* Counter Badge & Reset */}
-        <div className="flex items-center gap-3">
+      {/* Reusable DateFilterBar */}
+      <DateFilterBar
+        date={filterDate}
+        onDateChange={setFilterDate}
+        showReset={!isToday || !!statusFilter || !!filterCustomer}
+        onReset={() => {
+          setFilterDate(getTodayStr())
+          setStatusFilter('')
+          setFilterCustomer('')
+        }}
+        summarySlot={
           <div className="text-right">
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Total ({filtered.length})
+  Total ({invoices.length})
             </span>
             <span className="text-xs font-bold text-slate-900">
-              Rs {totalBilled.toLocaleString('en-PK')}{' '}
+  Rs {totalBilled.toLocaleString('en-PK')}{' '}
               <span className="text-emerald-600 font-normal">
                 (Paid: Rs {totalPaid.toLocaleString('en-PK')})
               </span>
             </span>
           </div>
-          {(!isToday || statusFilter || search) && (
-            <button
-              type="button"
-              onClick={() => {
-                setFilterDate(todayStr)
-                setStatusFilter('')
-                setSearch('')
-              }}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer ml-1"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-      </div>
+        }
+      >
+        {/* Status Dropdown Slot */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
+        >
+          <option value="">
+  Sab Status</option>
+          <option value="UNPAID"> UNPAID</option>
+          <option value="PARTIAL"> PARTIAL</option>
+          <option value="PAID"> PAID</option>
+        </select>
+
+        {/* Customer Dropdown Slot */}
+        <select
+          value={filterCustomer}
+          onChange={(e) => setFilterCustomer(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer max-w-[160px] truncate"
+        >
+          <option value="">
+  Sab Customers</option>
+          {customers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </DateFilterBar>
 
       {/* Invoices List / Table */}
       {loading ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400 text-sm animate-pulse">
-          Bills load ho rahe hain...
+  Bills load ho rahe hain...
         </div>
       ) : error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
-          ⚠ {error}
+          {error}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : invoices.length === 0 ? (
         <EmptyState
-          emoji="🧾"
+          
           title="Koi Bill Nahi Mila"
           description={
             isToday
@@ -250,7 +210,7 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((inv) => {
+                {invoices.map((inv) => {
                   const balance = inv.totalAmount - inv.paidAmount
                   return (
                     <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
@@ -267,14 +227,14 @@ export default function InvoicesPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4 font-bold text-slate-900 text-sm">
-                        Rs {inv.totalAmount.toLocaleString('en-PK')}
+  Rs {inv.totalAmount.toLocaleString('en-PK')}
                       </td>
                       <td className="px-4 py-4 font-semibold text-emerald-600 text-sm">
-                        Rs {inv.paidAmount.toLocaleString('en-PK')}
+  Rs {inv.paidAmount.toLocaleString('en-PK')}
                       </td>
                       <td className="px-4 py-4 font-bold text-sm">
                         <span className={balance > 0 ? 'text-red-600' : 'text-slate-400'}>
-                          Rs {balance.toLocaleString('en-PK')}
+  Rs {balance.toLocaleString('en-PK')}
                         </span>
                       </td>
                       <td className="px-4 py-4">
@@ -286,15 +246,13 @@ export default function InvoicesPage() {
                             onClick={() => setViewModalTarget(inv)}
                             className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer"
                           >
-                            👁 Dekho
-                          </button>
+  Dekho</button>
                           {inv.status !== 'PAID' && (
                             <button
                               onClick={() => setPaymentModalTarget(inv)}
                               className="rounded-md bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white shadow-2xs cursor-pointer"
                             >
-                              💳 Wasooli
-                            </button>
+  Wasooli</button>
                           )}
                         </div>
                       </td>

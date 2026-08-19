@@ -42,7 +42,7 @@ export function Modal({ isOpen, onClose, title, width, maxWidth, children }: Mod
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-transparent text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 cursor-pointer text-lg"
           >
-            ✕
+            
           </button>
         </div>
 

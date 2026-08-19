@@ -49,7 +49,7 @@ export function HistoryTab({ stock, historyProductId, setHistoryProductId, isLoa
         <LoadingSkeleton />
       ) : history.length === 0 ? (
         <EmptyState
-          emoji="📜"
+          
           title="Is product ki koi history nahi"
           description="Koi bhi stock IN ya OUT nahi hua"
         />

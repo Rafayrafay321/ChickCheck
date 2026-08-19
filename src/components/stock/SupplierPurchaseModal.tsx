@@ -7,11 +7,11 @@ import type { SupplierPurchaseInput } from '@/shared/types'
 interface SupplierPurchaseModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (input: SupplierPurchaseInput) => Promise<{ success: boolean; error?: string }>
+  onSubmit: (input: SupplierPurchaseInput | SupplierPurchaseInput[]) => Promise<{ success: boolean; error?: string }>
 }
 
 export function SupplierPurchaseModal({ isOpen, onClose, onSubmit }: SupplierPurchaseModalProps) {
-  const handleSubmit = async (input: SupplierPurchaseInput) => {
+  const handleSubmit = async (input: SupplierPurchaseInput | SupplierPurchaseInput[]) => {
     const res = await onSubmit(input)
     if (res.success) {
       onClose()
@@ -20,7 +20,7 @@ export function SupplierPurchaseModal({ isOpen, onClose, onSubmit }: SupplierPur
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="🚚 Live Hen Purchasing Entry">
+    <Modal isOpen={isOpen} onClose={onClose} title="Live Hen Purchasing Entry (Batch / Single)" maxWidth="640px">
       <SupplierPurchaseForm onSubmit={handleSubmit} onCancel={onClose} />
     </Modal>
   )

@@ -20,7 +20,7 @@ export function ExpenseModal({ isOpen, onClose, onSubmit }: ExpenseModalProps) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="💸 Daily Expense Entry">
+    <Modal isOpen={isOpen} onClose={onClose} title="Daily Expense Entry">
       <ExpenseForm onSubmit={handleSubmit} onCancel={onClose} />
     </Modal>
   )

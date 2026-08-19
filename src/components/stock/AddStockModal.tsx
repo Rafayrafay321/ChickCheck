@@ -71,7 +71,7 @@ export function AddStockModal({
         >
           {stock.length === 0 ? (
             <option value="" disabled>
-              Koi product nahi mila
+  Koi product nahi mila
             </option>
           ) : null}
           {stock.map((p) => (
@@ -103,7 +103,7 @@ export function AddStockModal({
 
         {displayError && (
           <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">
-            ⚠ {displayError}
+            {displayError}
           </div>
         )}
 
@@ -114,8 +114,7 @@ export function AddStockModal({
             disabled={formLoading}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 cursor-pointer disabled:opacity-50"
           >
-            Cancel
-          </button>
+  Cancel</button>
           <button
             type="submit"
             disabled={formLoading || stock.length === 0}

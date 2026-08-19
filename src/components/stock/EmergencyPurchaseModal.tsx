@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui/Modal'
+import { api } from '@/lib/api-client'
 
 interface Product {
   id: string
@@ -30,16 +31,14 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
 
   useEffect(() => {
     if (isOpen) {
-      // Load products for the dropdown
-      fetch('/api/products')
-        .then((r) => r.json())
-        .then((json) => {
-          if (json.success && Array.isArray(json.data)) {
-            setProducts(json.data)
-            if (json.data.length > 0) setProductId(json.data[0].id)
-          }
-        })
-        .catch(() => {})
+      // Load products for the dropdown via central api client
+      api.getProducts().then((res) => {
+        if (res.success && Array.isArray(res.data)) {
+          const prods = res.data as Product[]
+          setProducts(prods)
+          if (prods.length > 0) setProductId(prods[0].id)
+        }
+      })
 
       // Reset form
       setIsLiveHen(false)
@@ -66,18 +65,21 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/emergency-purchases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isLiveHen, productId: isLiveHen ? null : productId, supplierName, quantity: qty, costPerKg: rate, note }),
+      const res = await api.createEmergencyPurchase({
+        isLiveHen,
+        productId: isLiveHen ? undefined : productId,
+        supplierName: supplierName || undefined,
+        quantity: qty,
+        costPerKg: rate,
+        note: note || undefined,
       })
-      const json = await res.json()
-      if (json.success) {
+
+      if (res.success) {
         setSuccess(true)
         onSuccess()
         setTimeout(() => { setSuccess(false); onClose() }, 1200)
       } else {
-        setError(json.error || 'Save nahi hua')
+        setError(res.error || 'Save nahi hua')
       }
     } catch {
       setError('Connection error')
@@ -89,17 +91,16 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
   const selectedProduct = products.find((p) => p.id === productId)
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="⚡ Shortfall / Emergency Kharid">
+    <Modal isOpen={isOpen} onClose={onClose} title="Shortfall / Emergency Kharid">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Type Toggle */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-            Kaunsa Maal Khareeda?
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Kaunsa Maal Khareeda?
           </label>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { value: false, label: '🍗 Ready-Cut Maal', sub: 'Boneless, Kaleji, Pota, Wings etc.' },
-              { value: true, label: '🐔 Zinda Murgi', sub: 'Live Hen from outside' },
+              { value: false, label: 'Ready-Cut Maal', sub: 'Boneless, Kaleji, Pota, Wings etc.' },
+              { value: true, label: 'Zinda Murgi', sub: 'Live Hen from outside' },
             ].map((opt) => (
               <button
                 key={String(opt.value)}
@@ -121,8 +122,7 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
         {/* Product dropdown (only for ready-cut) */}
         {!isLiveHen && (
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Product (Kaunsa Cut?)
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Product (Kaunsa Cut?)
             </label>
             <select
               value={productId}
@@ -142,8 +142,7 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
         {/* Quantity + Rate grid */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-              Quantity (Kg)
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">Quantity (Kg)
             </label>
             <input
               type="number"
@@ -156,8 +155,7 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-              Purchase Rate (Rs/kg)
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">Purchase Rate (Rs/kg)
             </label>
             <input
               type="number"
@@ -188,8 +186,7 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
         )}
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">
-            Supplier / Dukaan ka Naam (Optional)
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Supplier / Dukaan ka Naam (Optional)
           </label>
           <input
             type="text"
@@ -212,10 +209,10 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">⚠ {error}</div>
+          <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">{error}</div>
         )}
         {success && (
-          <div className="p-3 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-200">✅ Emergency purchase save ho gaya!</div>
+          <div className="p-3 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-200">Emergency purchase save ho gaya!</div>
         )}
 
         <div className="flex gap-3 justify-end mt-1">
@@ -224,15 +221,13 @@ export function EmergencyPurchaseModal({ isOpen, onClose, onSuccess }: Emergency
             onClick={onClose}
             disabled={submitting}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 cursor-pointer disabled:opacity-50"
-          >
-            Cancel
-          </button>
+          >Cancel</button>
           <button
             type="submit"
             disabled={submitting}
             className="rounded-lg bg-orange-500 hover:bg-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
           >
-            {submitting ? 'Saving...' : '⚡ Save Emergency Purchase'}
+            {submitting ? 'Saving...' : ' Save Emergency Purchase'}
           </button>
         </div>
       </form>

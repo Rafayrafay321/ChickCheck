@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { api } from '@/lib/api-client'
 import type { SupplierPurchaseInput } from '@/shared/types'
 
 export interface SupplierPurchaseData {
@@ -24,14 +25,9 @@ export function useSupplierPurchases(filters?: { date?: string; all?: boolean })
     try {
       setLoading(true)
       setError(null)
-      const params = new URLSearchParams()
-      if (filters?.date) params.set('date', filters.date)
-      if (filters?.all) params.set('all', 'true')
-
-      const res = await fetch(`/api/purchases?${params.toString()}`)
-      const json = await res.json()
-      if (json.success && Array.isArray(json.data)) {
-        setPurchases(json.data)
+      const res = await api.getPurchases(filters?.date, filters?.all)
+      if (res.success && Array.isArray(res.data)) {
+        setPurchases(res.data as SupplierPurchaseData[])
       } else {
         setPurchases([])
       }
@@ -46,20 +42,18 @@ export function useSupplierPurchases(filters?: { date?: string; all?: boolean })
     fetchPurchases()
   }, [fetchPurchases])
 
-  const createPurchase = async (input: SupplierPurchaseInput) => {
+  const createPurchase = async (input: SupplierPurchaseInput | SupplierPurchaseInput[]) => {
     try {
       setError(null)
-      const res = await fetch('/api/purchases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      })
-      const json = await res.json()
-      if (json.success && json.data) {
+      const res = Array.isArray(input)
+        ? await api.createPurchasesBatch({ items: input })
+        : await api.createPurchase(input)
+
+      if (res.success && res.data) {
         await fetchPurchases()
-        return { success: true, data: json.data }
+        return { success: true, data: res.data }
       } else {
-        const err = json.error || 'Purchase save fail hua'
+        const err = res.error || 'Purchase save fail hua'
         setError(err)
         return { success: false, error: err }
       }
@@ -70,8 +64,19 @@ export function useSupplierPurchases(filters?: { date?: string; all?: boolean })
     }
   }
 
-  const totalPurchasedKg = purchases.reduce((sum, p) => sum + p.netWeight, 0)
-  const totalPurchasesCost = purchases.reduce((sum, p) => sum + p.totalAmount, 0)
+  const createBatchPurchases = async (items: SupplierPurchaseInput[]) => {
+    return createPurchase(items)
+  }
+
+  const { totalPurchasedKg, totalPurchasesCost } = useMemo(() => {
+    return purchases.reduce(
+      (acc, p) => ({
+        totalPurchasedKg: acc.totalPurchasedKg + p.netWeight,
+        totalPurchasesCost: acc.totalPurchasesCost + p.totalAmount,
+      }),
+      { totalPurchasedKg: 0, totalPurchasesCost: 0 }
+    )
+  }, [purchases])
 
   return {
     purchases,
@@ -81,5 +86,6 @@ export function useSupplierPurchases(filters?: { date?: string; all?: boolean })
     error,
     refetch: fetchPurchases,
     createPurchase,
+    createBatchPurchases,
   }
 }

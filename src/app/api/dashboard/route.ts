@@ -26,6 +26,7 @@ export async function GET() {
       recentPayments,
       purchasesAgg,
       pool,
+      supplierPayableResult,
     ] = await Promise.all([
       db.order.findMany({
         where: { orderDate: { gte: sessionStart }, status: { not: 'CANCELLED' } },
@@ -61,6 +62,10 @@ export async function GET() {
       }),
       db.liveWeightPool.findUnique({
         where: { date: today },
+      }),
+      db.supplier.aggregate({
+        where: { isActive: true },
+        _sum: { totalPayable: true },
       }),
     ])
 
@@ -106,6 +111,7 @@ export async function GET() {
         todayExpenses,
         netProfit,
         totalUdhaar: Math.max(0, (totalUdhaarResult._sum.totalAmount ?? 0) - (totalUdhaarResult._sum.paidAmount ?? 0)),
+        totalSupplierPayable: Math.max(0, supplierPayableResult._sum.totalPayable ?? 0),
         pendingOrders,
         livePoolAvailable,
         recentOrders,

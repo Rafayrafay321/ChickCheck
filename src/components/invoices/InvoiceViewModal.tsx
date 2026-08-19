@@ -45,13 +45,13 @@ export function InvoiceViewModal({ isOpen, onClose, invoice }: InvoiceViewModalP
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="🧾 Bill Preview & Print" width="540px">
+    <Modal isOpen={isOpen} onClose={onClose} title="Bill Preview & Print" width="540px">
       <div className="flex flex-col gap-5">
         {/* Printable Area */}
         <div id="printable-bill" className="p-6 bg-white border border-border rounded-xl text-black font-sans space-y-4">
           {/* Header */}
           <div className="text-center border-b border-gray-200 pb-3">
-            <h2 className="text-xl font-extrabold m-0 tracking-tight text-gray-900">🐔 AL MAUSAF CHICKEN CENTRE</h2>
+            <h2 className="text-xl font-extrabold m-0 tracking-tight text-gray-900"> AL MAUSAF CHICKEN CENTRE</h2>
             <p className="text-xs text-gray-600 mt-1">Wholesale & Retail Chicken Specialists</p>
             <div className="text-[0.7rem] text-gray-500 mt-0.5">Bill / Cash Memo</div>
           </div>
@@ -114,8 +114,7 @@ export function InvoiceViewModal({ isOpen, onClose, invoice }: InvoiceViewModalP
             </div>
           )}
 
-          <div className="text-center text-[0.7rem] text-gray-500 pt-2 border-t border-gray-100">
-            Shukriya! Phir Tashreef Layien 🙏
+          <div className="text-center text-[0.7rem] text-gray-500 pt-2 border-t border-gray-100">Shukriya! Phir Tashreef Layien 
           </div>
         </div>
 
@@ -125,15 +124,12 @@ export function InvoiceViewModal({ isOpen, onClose, invoice }: InvoiceViewModalP
             type="button"
             onClick={onClose}
             className="py-2.5 px-4 rounded-lg border border-border bg-transparent text-text-secondary hover:bg-bg cursor-pointer transition-colors"
-          >
-            Close
-          </button>
+          >Close</button>
           <button
             type="button"
             onClick={handlePrint}
             className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer min-h-11 flex items-center gap-2"
-          >
-            🖨️ Bill Print Karein
+          >Bill Print Karein
           </button>
         </div>
       </div>

@@ -10,13 +10,13 @@ export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
 
   if (status === 'PENDING') {
     badgeClasses = 'bg-amber-50 text-amber-700'
-    label = '⏳ PENDING'
+    label = ' PENDING'
   } else if (status === 'DELIVERED') {
     badgeClasses = 'bg-emerald-50 text-emerald-700'
-    label = '✓ DELIVERED'
+    label = ' DELIVERED'
   } else if (status === 'CANCELLED') {
     badgeClasses = 'bg-red-50 text-red-700'
-    label = '✕ CANCELLED'
+    label = ' CANCELLED'
   }
 
   return (

@@ -66,20 +66,20 @@ export default function StockPage() {
     setIsLoading(true); setFetchError(null)
     try {
       const [stockRes, prodRes, emergencyRes] = await Promise.all([
-        fetch('/api/stock').then(r => r.json()),
+        api.getStockSummary(),
         api.getProducts(),
-        fetch('/api/emergency-purchases').then(r => r.json()),
+        api.getEmergencyPurchases(),
       ])
 
       if (stockRes.success && stockRes.data) {
-        setLivePool(stockRes.data.livePool)
+        setLivePool((stockRes.data as { livePool: LivePoolState }).livePool)
       }
       if (prodRes.success && Array.isArray(prodRes.data)) {
         const prodList = prodRes.data as Array<{ id: string; name: string; nameUrdu: string | null; unit: 'kg' | 'piece' }>
-        setStock(prodList.map(p => ({ ...p, currentStock: 0 })))
+        setStock(prodList.map((p) => ({ ...p, currentStock: 0 })))
       }
       if (emergencyRes.success && emergencyRes.data) {
-        setEmergencyStock(emergencyRes.data)
+        setEmergencyStock(emergencyRes.data as EmergencyStockState)
       }
     } catch {
       setFetchError('Connection error')
@@ -110,7 +110,7 @@ export default function StockPage() {
 
   const TABS = [
     { id: 'current', label: 'Current Stock' },
-    { id: 'purchases', label: '🚚 Supplier Purchases' },
+    { id: 'purchases', label: 'Supplier Purchases' },
     { id: 'history', label: 'Pichla Record (History)' },
   ] as const
 
@@ -119,21 +119,22 @@ export default function StockPage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">📦 Current Stock</h2>
-          <p className="text-sm text-slate-500 mt-1">Live Stock & Inventory</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900"> Current Stock</h2>
+          <p className="text-sm text-slate-500 mt-1">
+  Live Stock & Inventory</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => setPurchaseModalOpen(true)}
             className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
           >
-            🚚 Chicken Purchase
+  Chicken Purchase
           </button>
           <button
             onClick={() => setEmergencyModalOpen(true)}
             className="inline-flex items-center justify-center rounded-lg border border-orange-300 bg-orange-50 hover:bg-orange-100 px-4 py-2 text-sm font-medium text-orange-700 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
           >
-            ⚡ Shortage Purchase
+  Shortage Purchase
           </button>
         </div>
       </div>
@@ -156,7 +157,7 @@ export default function StockPage() {
       </div>
 
       {fetchError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">⚠ {fetchError}</div>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">{fetchError}</div>
       )}
 
       {activeTab === 'current' && (
@@ -183,7 +184,7 @@ export default function StockPage() {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Aaj (Today)
+  Aaj (Today)
                 </button>
                 <button
                   type="button"
@@ -194,7 +195,7 @@ export default function StockPage() {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Tamam (All)
+  Tamam (All)
                 </button>
               </div>
 
@@ -210,7 +211,7 @@ export default function StockPage() {
             {/* Purchases Stats & Reset */}
             <div className="flex items-center gap-3">
               <span className="text-xs text-slate-500 font-medium">
-                Total: <strong className="text-slate-900 font-bold">{purchases.length}</strong> entries
+  Total: <strong className="text-slate-900 font-bold">{purchases.length}</strong> entries
               </span>
               {purchaseFilterDate !== getTodayStr() && (
                 <button
@@ -218,17 +219,18 @@ export default function StockPage() {
                   onClick={() => setPurchaseFilterDate(getTodayStr())}
                   className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer ml-1"
                 >
-                  Reset
-                </button>
+  Reset</button>
               )}
             </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             {purchasesLoading ? (
-              <div className="p-8 text-center text-slate-400 text-sm animate-pulse">Purchases load ho rahi hain...</div>
+              <div className="p-8 text-center text-slate-400 text-sm animate-pulse">
+  Purchases load ho rahi hain...</div>
             ) : purchases.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 text-sm">Koi Supplier Purchase record nahi mila. Top button se nayi entry daalein.</div>
+              <div className="p-12 text-center text-slate-400 text-sm">
+  Koi Supplier Purchase record nahi mila. Top button se nayi entry daalein.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm text-left">
@@ -247,8 +249,10 @@ export default function StockPage() {
                         <td className="px-4 py-4 text-slate-900">{p.grossWeight} kg</td>
                         <td className="px-4 py-4 text-red-600 font-medium">-{p.dudWeight} kg</td>
                         <td className="px-4 py-4 font-bold text-slate-900">{p.netWeight} kg</td>
-                        <td className="px-4 py-4 text-slate-600 text-xs">Rs {p.ratePerKg}</td>
-                        <td className="px-4 py-4 font-bold text-emerald-600">Rs {p.totalAmount.toLocaleString('en-PK')}</td>
+                        <td className="px-4 py-4 text-slate-600 text-xs">
+  Rs {p.ratePerKg}</td>
+                        <td className="px-4 py-4 font-bold text-emerald-600">
+  Rs {p.totalAmount.toLocaleString('en-PK')}</td>
                       </tr>
                     ))}
                   </tbody>

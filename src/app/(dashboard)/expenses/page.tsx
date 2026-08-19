@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { api } from '@/lib/api-client'
 import { ExpenseModal } from '@/components/expenses/ExpenseModal'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { DateFilterBar, getTodayStr } from '@/components/ui/DateFilterBar'
 import type { ExpenseInput } from '@/shared/types'
 
 interface ExpenseData {
@@ -13,23 +16,15 @@ interface ExpenseData {
   createdAt: string
 }
 
-const CATEGORY_EMOJIS: Record<string, string> = {
-  PETROL: '⛽ Petrol',
-  BAGS: '🛍️ Poly Bags',
-  BIKE: '🛵 Bike Repair',
-  PUNCHER: '🔧 Puncher',
-  POLICE: '👮 Police/Chungi',
-  LUNCH: '🍱 Lunch/Khaana',
-  WAGES: '💼 Wages/Mazdoori',
-  OTHER: '📝 Other Kharcha',
-}
-
-function getTodayStr() {
-  const d = new Date()
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+const CATEGORY_LABELS: Record<string, string> = {
+  PETROL: 'Petrol',
+  BAGS: 'Poly Bags',
+  BIKE: 'Bike Repair',
+  PUNCHER: 'Puncher',
+  POLICE: 'Police/Chungi',
+  LUNCH: 'Lunch/Khaana',
+  WAGES: 'Wages/Mazdoori',
+  OTHER: 'Other Kharcha',
 }
 
 export default function ExpensesPage() {
@@ -46,20 +41,9 @@ export default function ExpensesPage() {
     try {
       setLoading(true)
       setError(null)
-      const params = new URLSearchParams()
-      if (filterDate) {
-        params.set('date', filterDate)
-      } else {
-        params.set('all', 'true')
-      }
-      if (filterCategory) {
-        params.set('category', filterCategory)
-      }
-
-      const res = await fetch(`/api/expenses?${params.toString()}`)
-      const json = await res.json()
-      if (json.success && Array.isArray(json.data)) {
-        setExpenses(json.data)
+      const res = await api.getExpenses(filterCategory || undefined, filterDate || undefined)
+      if (res.success && Array.isArray(res.data)) {
+        setExpenses(res.data as ExpenseData[])
       } else {
         setExpenses([])
       }
@@ -77,17 +61,12 @@ export default function ExpensesPage() {
   const createExpense = async (input: ExpenseInput) => {
     try {
       setError(null)
-      const res = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      })
-      const json = await res.json()
-      if (json.success && json.data) {
+      const res = await api.createExpense(input)
+      if (res.success && res.data) {
         await fetchExpenses()
-        return { success: true, data: json.data }
+        return { success: true, data: res.data }
       } else {
-        const err = json.error || 'Expense save fail hua'
+        const err = res.error || 'Expense save fail hua'
         setError(err)
         return { success: false, error: err }
       }
@@ -98,122 +77,67 @@ export default function ExpensesPage() {
     }
   }
 
-  const todayStr = getTodayStr()
-  const isToday = filterDate === todayStr
+  const isToday = filterDate === getTodayStr()
   const isAllDates = !filterDate
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0)
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">💸 Kharchay (Expenses)</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {isToday ? 'Aaj ke dukan ke tamam kharchay' : isAllDates ? 'Tamam pichlay kharchay' : `Kharchay baraye ${filterDate}`}
-          </p>
-        </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
-        >
-          <span>+</span> Naya Kharcha
-        </button>
-      </div>
+      {/* Reusable Page Header */}
+      <PageHeader
+        title="Kharchay (Expenses)"
+        subtitle={isToday ? 'Aaj ke dukan ke tamam kharchay' : isAllDates ? 'Tamam pichlay kharchay' : `Kharchay baraye ${filterDate}`}
+        actionLabel="Naya Kharcha"
+        onAction={() => setIsModalOpen(true)}
+      />
 
-      {/* Clean Streamlined Filters & Summary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-sm">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Quick Date Toggle Pills */}
-          <div className="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200/60">
-            <button
-              type="button"
-              onClick={() => setFilterDate(todayStr)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                isToday
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Aaj (Today)
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterDate('')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                isAllDates
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Tamam (All)
-            </button>
-          </div>
-
-          {/* Custom Date Picker */}
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
-          />
-
-          {/* Category Dropdown */}
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
-          >
-            <option value="">Sab Categories</option>
-            {Object.entries(CATEGORY_EMOJIS).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Total Expense Highlight & Reset */}
-        <div className="flex items-center gap-3">
+      {/* Reusable DateFilterBar */}
+      <DateFilterBar
+        date={filterDate}
+        onDateChange={setFilterDate}
+        showReset={!isToday || !!filterCategory}
+        onReset={() => {
+          setFilterDate(getTodayStr())
+          setFilterCategory('')
+        }}
+        summarySlot={
           <div className="text-right">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Total Kharcha ({expenses.length})
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Total Kharcha ({expenses.length})
             </span>
-            <strong className="text-base font-bold text-red-600">
-              Rs {totalAmount.toLocaleString('en-PK')}
+            <strong className="text-base font-bold text-red-600">Rs {totalAmount.toLocaleString('en-PK')}
             </strong>
           </div>
-          {(!isToday || filterCategory) && (
-            <button
-              type="button"
-              onClick={() => {
-                setFilterDate(todayStr)
-                setFilterCategory('')
-              }}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer ml-1"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-      </div>
+        }
+      >
+        {/* Category Dropdown Slot */}
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
+        >
+          <option value="">Sab Categories</option>
+          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </DateFilterBar>
 
       {/* Error State */}
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
-          ⚠ {error}
+          {error}
         </div>
       )}
 
       {/* Expenses Table */}
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-slate-400 text-sm animate-pulse">
-            Kharchay load ho rahe hain...
+          <div className="p-8 text-center text-slate-400 text-sm animate-pulse">Kharchay load ho rahe hain...
           </div>
         ) : expenses.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 text-sm">
-            Koi kharcha record nahi mila. Top button se naya kharcha add karein.
+          <div className="p-12 text-center text-slate-400 text-sm">Koi kharcha record nahi mila. Top button se naya kharcha add karein.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -237,14 +161,13 @@ export default function ExpensesPage() {
                     </td>
                     <td className="px-4 py-4 font-semibold text-slate-900">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-xs font-medium">
-                        {CATEGORY_EMOJIS[exp.category] || exp.category}
+                        {CATEGORY_LABELS[exp.category] || exp.category}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-slate-500 text-xs">
                       {exp.note || '—'}
                     </td>
-                    <td className="px-4 py-4 text-right font-bold text-red-600 text-sm">
-                      Rs {exp.amount.toLocaleString('en-PK')}
+                    <td className="px-4 py-4 text-right font-bold text-red-600 text-sm">Rs {exp.amount.toLocaleString('en-PK')}
                     </td>
                   </tr>
                 ))}

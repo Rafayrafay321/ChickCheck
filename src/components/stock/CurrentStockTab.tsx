@@ -42,7 +42,6 @@ function LoadingSkeleton() {
 
 export function CurrentStockTab({ isLoading, livePool, emergencyStock }: CurrentStockTabProps) {
   if (isLoading) return <LoadingSkeleton />
-
   const hasEmergencyToday = (emergencyStock?.purchases?.length ?? 0) > 0
 
   return (
@@ -51,14 +50,14 @@ export function CurrentStockTab({ isLoading, livePool, emergencyStock }: Current
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900 m-0">🐔 Live Weight</h3>
+            <h3 className="text-base font-bold text-slate-900 m-0"> Live Weight</h3>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
-              Yesterday's Opening Weight
+  Yesterday's Opening Weight
             </span>
             <strong className="text-xl font-bold text-slate-900">
               {livePool?.openingWeight ?? 0} kg
@@ -67,7 +66,7 @@ export function CurrentStockTab({ isLoading, livePool, emergencyStock }: Current
 
           <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
-              Purchases Weight
+  Purchases Weight
             </span>
             <strong className="text-xl font-bold text-emerald-600">
               +{livePool?.purchasesWeight ?? 0} kg
@@ -76,7 +75,7 @@ export function CurrentStockTab({ isLoading, livePool, emergencyStock }: Current
 
           <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">
-              Sold Weight
+  Sold Weight
             </span>
             <strong className="text-xl font-bold text-red-600">
               -{livePool?.soldWeight ?? 0} kg
@@ -85,7 +84,7 @@ export function CurrentStockTab({ isLoading, livePool, emergencyStock }: Current
 
           <div className="p-4 rounded-lg bg-blue-50/60 border border-blue-100">
             <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 block mb-1">
-              Available Weight
+  Available Weight
             </span>
             <strong className="text-2xl font-bold text-blue-700">
               {livePool?.availableWeight ?? 0} kg
@@ -98,18 +97,18 @@ export function CurrentStockTab({ isLoading, livePool, emergencyStock }: Current
       <div className="rounded-xl border border-orange-200 bg-orange-50/30 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-orange-200 bg-orange-50">
           <div>
-            <h3 className="text-sm font-bold text-orange-800 m-0">⚡ Emergency / Shortage Stock</h3>
+            <h3 className="text-sm font-bold text-orange-800 m-0"> Emergency / Shortage Stock</h3>
           </div>
           {hasEmergencyToday && (
             <span className="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
-              Total Cost: Rs {emergencyStock!.totalEmergencyCost.toLocaleString()}
+  Total Cost: Rs {emergencyStock!.totalEmergencyCost.toLocaleString()}
             </span>
           )}
         </div>
 
         {!hasEmergencyToday ? (
           <div className="p-5 text-xs text-orange-700 text-center">
-            Aaj koi emergency purchase nahi ki gayi. Agar stock khatam ho jaye tou top par "⚡ Kharid" button use karein.
+  Aaj koi emergency purchase nahi ki gayi. Agar stock khatam ho jaye tou top par " Kharid" button use karein.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -127,11 +126,12 @@ export function CurrentStockTab({ isLoading, livePool, emergencyStock }: Current
                 {emergencyStock!.purchases.map((ep) => (
                   <tr key={ep.id} className="hover:bg-orange-50/50 transition-colors">
                     <td className="px-4 py-3 font-semibold text-slate-900">
-                      {ep.isLiveHen ? '🐔 Zinda Murgi (Emergency)' : (ep.product?.name ?? '—')}
+                      {ep.isLiveHen ? ' Zinda Murgi (Emergency)' : (ep.product?.name ?? '—')}
                     </td>
                     <td className="px-4 py-3 text-slate-500">{ep.supplierName ?? '—'}</td>
                     <td className="px-4 py-3 font-semibold text-slate-900">{ep.quantity} kg</td>
-                    <td className="px-4 py-3 text-slate-700">Rs {ep.costPerKg}</td>
+                    <td className="px-4 py-3 text-slate-700">
+  Rs {ep.costPerKg}</td>
                     <td className="px-4 py-3 text-red-600 font-medium">{ep.usedQty.toFixed(1)} kg</td>
                     <td className="px-4 py-3">
                       <span className={`font-bold ${ep.remainingQty <= 0 ? 'text-slate-400' : 'text-emerald-600'}`}>

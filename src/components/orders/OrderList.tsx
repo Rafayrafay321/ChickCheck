@@ -28,11 +28,10 @@ function LoadingSkeleton() {
 
 export function OrderList({ isLoading, orders, onDeliver, onCancel, actionLoading }: OrderListProps) {
   if (isLoading) return <LoadingSkeleton />
-
   if (orders.length === 0) {
     return (
       <EmptyState
-        emoji="📋"
+        
         title="Koi order nahi hai"
         description="Naya order bananey ke liye upar + Naya Order par click karein"
       />
@@ -70,7 +69,7 @@ export function OrderList({ isLoading, orders, onDeliver, onCancel, actionLoadin
                     {order.items.map(item => `${item.quantity}${item.product.unit} ${item.product.name}`).join(', ')}
                   </td>
                   <td className="px-4 py-4 font-bold text-slate-900">
-                    Rs {order.totalAmount.toLocaleString('en-PK')}
+  Rs {order.totalAmount.toLocaleString('en-PK')}
                   </td>
                   <td className="px-4 py-4">
                     <OrderStatusBadge status={order.status} />
@@ -85,14 +84,12 @@ export function OrderList({ isLoading, orders, onDeliver, onCancel, actionLoadin
                           onClick={() => onDeliver(order.id)}
                           className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 active:scale-[0.98] cursor-pointer"
                         >
-                          Deliver ✓
-                        </button>
+  Deliver</button>
                         <button
                           onClick={() => onCancel(order.id)}
                           className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 shadow-sm transition-all hover:bg-red-100 active:scale-[0.98] cursor-pointer"
                         >
-                          Cancel ✕
-                        </button>
+  Cancel</button>
                       </div>
                     )}
                   </td>

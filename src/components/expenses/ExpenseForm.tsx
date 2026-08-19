@@ -9,14 +9,14 @@ interface ExpenseFormProps {
 }
 
 const CATEGORIES = [
-  { id: 'PETROL', label: 'Petrol', emoji: '⛽' },
-  { id: 'BAGS', label: 'Poly Bags', emoji: '🛍️' },
-  { id: 'BIKE', label: 'Bike Repair', emoji: '🛵' },
-  { id: 'PUNCHER', label: 'Puncher', emoji: '🔧' },
-  { id: 'POLICE', label: 'Police/Chungi', emoji: '👮' },
-  { id: 'LUNCH', label: 'Lunch/Khaana', emoji: '🍱' },
-  { id: 'WAGES', label: 'Wages/Mazdoori', emoji: '💼' },
-  { id: 'OTHER', label: 'Other Kharcha', emoji: '📝' },
+  { id: 'PETROL', label: 'Petrol', emoji: '' },
+  { id: 'BAGS', label: 'Poly Bags', emoji: '' },
+  { id: 'BIKE', label: 'Bike Repair', emoji: '' },
+  { id: 'PUNCHER', label: 'Puncher', emoji: '' },
+  { id: 'POLICE', label: 'Police/Chungi', emoji: '' },
+  { id: 'LUNCH', label: 'Lunch/Khaana', emoji: '' },
+  { id: 'WAGES', label: 'Wages/Mazdoori', emoji: '' },
+  { id: 'OTHER', label: 'Other Kharcha', emoji: '' },
 ] as const
 
 export function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
@@ -59,7 +59,7 @@ export function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
 
       <div>
         <label className="block text-xs font-medium text-text-secondary mb-2">
-          Category Select Karein
+  Category Select Karein
         </label>
         <div className="grid grid-cols-2 gap-2">
           {CATEGORIES.map((cat) => {
@@ -85,7 +85,7 @@ export function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
 
       <div>
         <label className="block text-xs font-medium text-text-secondary mb-1.5">
-          Amount (PKR)
+  Amount (PKR)
         </label>
         <input
           type="number"
@@ -100,7 +100,7 @@ export function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
 
       <div>
         <label className="block text-xs font-medium text-text-secondary mb-1.5">
-          Note (Optional)
+  Note (Optional)
         </label>
         <input
           type="text"
@@ -118,8 +118,7 @@ export function ExpenseForm({ onSubmit, onCancel }: ExpenseFormProps) {
             onClick={onCancel}
             className="flex-1 py-2.5 px-4 rounded-lg cursor-pointer border border-border bg-transparent text-text-secondary hover:bg-bg transition-colors"
           >
-            Cancel
-          </button>
+  Cancel</button>
         )}
         <button
           type="submit"

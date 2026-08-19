@@ -1,6 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { api } from '@/lib/api-client'
+import { OrderWithDetails } from './types'
+import { OrderList } from '@/components/orders/OrderList'
+import { CreateOrderModal } from '@/components/orders/CreateOrderModal'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { DateFilterBar, getTodayStr } from '@/components/ui/DateFilterBar'
 
 interface ProductState {
   id: string
@@ -13,19 +19,6 @@ interface ProductState {
   isActive: boolean
 }
 
-import { api } from '@/lib/api-client'
-import { OrderWithDetails } from './types'
-import { OrderList } from '@/components/orders/OrderList'
-import { CreateOrderModal } from '@/components/orders/CreateOrderModal'
-
-function getTodayStr() {
-  const d = new Date()
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([])
   const [customers, setCustomers] = useState<{ id: string; name: string; type: string }[]>([])
@@ -35,7 +28,7 @@ export default function OrdersPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Default filter: Today's date
+  // Filters
   const [filterDate, setFilterDate] = useState<string>(getTodayStr())
   const [filterStatus, setFilterStatus] = useState<string>('')
   const [filterCustomer, setFilterCustomer] = useState<string>('')
@@ -130,116 +123,64 @@ export default function OrdersPage() {
     setActionLoading(null)
   }
 
-  const todayStr = getTodayStr()
-  const isToday = filterDate === todayStr
+  const isToday = filterDate === getTodayStr()
   const isAllDates = !filterDate
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">📋 Orders</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {isToday ? 'Aaj ke tamam orders' : isAllDates ? 'Tamam pichlay orders' : `Orders baraye ${filterDate}`}
-          </p>
-        </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer"
-        >
-          <span>+</span> Naya Order
-        </button>
-      </div>
+      {/* Reusable Page Header */}
+      <PageHeader
+        title="Orders"
+        subtitle={isToday ? 'Aaj ke tamam orders' : isAllDates ? 'Tamam pichlay orders' : `Orders baraye ${filterDate}`}
+        actionLabel="Naya Order"
+        onAction={() => setIsModalOpen(true)}
+      />
 
-      {/* Clean Streamlined Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-sm">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Quick Date Toggle Pills */}
-          <div className="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200/60">
-            <button
-              type="button"
-              onClick={() => setFilterDate(todayStr)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                isToday
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Aaj (Today)
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterDate('')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                isAllDates
-                  ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Tamam (All)
-            </button>
-          </div>
-
-          {/* Custom Date Picker */}
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
-          />
-
-          {/* Status Dropdown */}
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
-          >
-            <option value="">Sab Status</option>
-            <option value="PENDING">⏳ Pending</option>
-            <option value="DELIVERED">✓ Delivered</option>
-            <option value="CANCELLED">✕ Cancelled</option>
-          </select>
-
-          {/* Customer Dropdown */}
-          <select
-            value={filterCustomer}
-            onChange={(e) => setFilterCustomer(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer max-w-[160px] truncate"
-          >
-            <option value="">Sab Customers</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Counter Badge & Reset */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 font-medium">
-            Total: <strong className="text-slate-900 font-bold">{orders.length}</strong> orders
+      {/* Reusable Clean DateFilterBar with Composition Slots */}
+      <DateFilterBar
+        date={filterDate}
+        onDateChange={setFilterDate}
+        showReset={!isToday || !!filterStatus || !!filterCustomer}
+        onReset={() => {
+          setFilterDate(getTodayStr())
+          setFilterStatus('')
+          setFilterCustomer('')
+        }}
+        summarySlot={
+          <span className="text-xs text-slate-500 font-medium">Total: <strong className="text-slate-900 font-bold">{orders.length}</strong> orders
           </span>
-          {(!isToday || filterStatus || filterCustomer) && (
-            <button
-              type="button"
-              onClick={() => {
-                setFilterDate(todayStr)
-                setFilterStatus('')
-                setFilterCustomer('')
-              }}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer ml-1"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-      </div>
+        }
+      >
+        {/* Status Dropdown Slot */}
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer"
+        >
+          <option value="">Sab Status</option>
+          <option value="PENDING">Pending</option>
+          <option value="DELIVERED">Delivered</option>
+          <option value="CANCELLED"> Cancelled</option>
+        </select>
+
+        {/* Customer Dropdown Slot */}
+        <select
+          value={filterCustomer}
+          onChange={(e) => setFilterCustomer(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-hidden cursor-pointer max-w-[160px] truncate"
+        >
+          <option value="">Sab Customers</option>
+          {customers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </DateFilterBar>
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
-          ⚠ {error}
+          {error}
         </div>
       )}
 

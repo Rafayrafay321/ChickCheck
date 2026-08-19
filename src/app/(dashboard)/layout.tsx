@@ -38,9 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             onClick={handleLogout}
             className="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-700 active:scale-[0.98] cursor-pointer"
-          >
-            Logout
-          </button>
+          >Logout</button>
         </header>
 
         <main className="flex-1 overflow-auto bg-slate-50 p-6 md:p-8">

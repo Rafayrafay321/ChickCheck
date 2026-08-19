@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { FormField } from '@/components/ui/FormField'
 import { useDailyRate } from '@/hooks/useDailyRate'
+import { api } from '@/lib/api-client'
 
 interface Customer {
   id: string
@@ -56,11 +57,10 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
 
   useEffect(() => {
     if (customerId) {
-      fetch(`/api/customer-multipliers?customerId=${customerId}`)
-        .then((res) => res.json())
-        .then((json) => {
-          if (json.success && Array.isArray(json.data)) {
-            setCustomerMultipliers(json.data)
+      api.getCustomerMultipliers(customerId)
+        .then((res) => {
+          if (res.success && Array.isArray(res.data)) {
+            setCustomerMultipliers(res.data as CustomerMultiplier[])
           } else {
             setCustomerMultipliers([])
           }
@@ -146,7 +146,8 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {!dailyRate && (
           <div className="p-3 bg-amber-500/15 text-amber-500 rounded-lg text-xs font-medium border border-amber-500/30">
-            ⚠️ <strong>Aaj ka Farm Rate Missing hai!</strong> Multiplier rate calculate karne ke liye pehle top bar se Farm Rate daalein.
+             <strong>
+  Aaj ka Farm Rate Missing hai!</strong> Multiplier rate calculate karne ke liye pehle top bar se Farm Rate daalein.
           </div>
         )}
 
@@ -160,7 +161,8 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
           >
-            <option value="" disabled>Select karein...</option>
+            <option value="" disabled>
+  Select karein...</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
             ))}
@@ -185,7 +187,8 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
                     value={item.productId}
                     onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
                   >
-                    <option value="" disabled>Chuno...</option>
+                    <option value="" disabled>
+  Chuno...</option>
                     {products.map((p) => {
                       const price = getItemUnitPrice(p.id)
                       return (
@@ -210,7 +213,7 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
                 </div>
                 {item.productId && (
                   <div className={`text-xs font-semibold text-green-500 min-w-[70px] text-right ${index === 0 ? 'mt-7' : 'mt-2'}`}>
-                    Rs. {(calculatedPrice * (Number(item.quantity) || 0)).toLocaleString()}
+  Rs. {(calculatedPrice * (Number(item.quantity) || 0)).toLocaleString()}
                   </div>
                 )}
                 {items.length > 1 && (
@@ -219,7 +222,7 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
                     onClick={() => handleRemoveItem(index)}
                     className={`px-3 py-2 bg-red-500/15 text-red-500 rounded-md font-bold cursor-pointer hover:bg-red-500/20 transition-colors ${index === 0 ? 'mt-7' : 'mt-1'}`}
                   >
-                    ✕
+                    
                   </button>
                 )}
               </div>
@@ -238,8 +241,10 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
         {/* Total & Note */}
         <div className="flex flex-col gap-4">
           <div className="flex justify-between p-4 bg-green-500/15 rounded-lg border border-green-500/30">
-            <span className="font-semibold text-green-500">Total Bill (Calculated Rate):</span>
-            <span className="font-bold text-xl text-green-500">Rs. {liveTotal.toLocaleString('en-PK')}</span>
+            <span className="font-semibold text-green-500">
+  Total Bill (Calculated Rate):</span>
+            <span className="font-bold text-xl text-green-500">
+  Rs. {liveTotal.toLocaleString('en-PK')}</span>
           </div>
 
           <FormField
@@ -253,7 +258,7 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
 
         {displayError && (
           <div className="p-3 bg-red-500/15 text-red-500 rounded-lg text-xs font-medium">
-            ⚠ {displayError}
+            {displayError}
           </div>
         )}
 
@@ -264,8 +269,7 @@ export function CreateOrderModal({ isOpen, onClose, customers, products, onSubmi
             disabled={formLoading}
             className="py-2.5 px-4 rounded-lg cursor-pointer border border-border bg-transparent text-text-secondary hover:bg-bg transition-colors"
           >
-            Cancel
-          </button>
+  Cancel</button>
           <button
             type="submit"
             disabled={formLoading || !dailyRate}

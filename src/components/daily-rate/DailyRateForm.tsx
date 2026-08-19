@@ -11,25 +11,24 @@ interface DailyRateFormProps {
 
 export function DailyRateForm({ initialData, onSubmit, onCancel }: DailyRateFormProps) {
   const [farmRateInput, setFarmRateInput] = useState(initialData ? String(initialData.farmRate) : '')
-  const [premiumInput, setPremiumInput] = useState(initialData ? String(initialData.supplierPremium) : '4')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   const farmRate = parseFloat(farmRateInput) || 0
-  const premium = parseFloat(premiumInput) || 0
-  const calculatedSupplyRate = farmRate + premium
+  const standardPremium = initialData?.supplierPremium ?? 4
+  const calculatedSupplyRate = farmRate > 0 ? farmRate + standardPremium : 0
 
-  async function handleSubmit(e: React.SubmitEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
     if (!farmRate || farmRate <= 0) {
-      setError('Farm Rate sahi enter karein (e.g. 300)')
+      setError('Farm Rate enter karein (e.g. 300)')
       return
     }
 
     setSubmitting(true)
-    const result = await onSubmit(farmRate, premium)
+    const result = await onSubmit(farmRate, standardPremium)
     setSubmitting(false)
 
     if (!result.success) {
@@ -38,68 +37,66 @@ export function DailyRateForm({ initialData, onSubmit, onCancel }: DailyRateForm
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="p-2.5 rounded-lg bg-red-500/15 text-red-500 text-xs font-medium">
+        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium border border-red-200">
           {error}
         </div>
       )}
 
       <div>
-        <label className="block text-xs font-medium text-text-secondary mb-1.5">
-          Farm Rate (PKR / kg)
+        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+  Aaj Ka Daily Farm Rate (Mandi Rate)
         </label>
-        <input
-          type="number"
-          step="1"
-          min="0"
-          required
-          inputMode="numeric"
-          placeholder="e.g. 300"
-          value={farmRateInput}
-          onChange={(e) => setFarmRateInput(e.target.value)}
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-bg text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
-/>
+        <div className="relative">
+          <input
+            type="number"
+            step="1"
+            min="1"
+            required
+            autoFocus
+            inputMode="numeric"
+            placeholder="e.g. 300"
+            value={farmRateInput}
+            onChange={(e) => setFarmRateInput(e.target.value)}
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-lg font-bold text-slate-900 shadow-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+  PKR / Kg
+          </span>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-text-secondary mb-1.5">
-          Supplier Premium (Default: +4 PKR)
-        </label>
-        <input
-          type="number"
-          step="1"
-          value={premiumInput}
-          onChange={(e) => setPremiumInput(e.target.value)}
-          className="w-full px-3 py-2.5 rounded-lg border border-border bg-bg text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
+      {farmRate > 0 && (
+        <div className="rounded-xl bg-slate-50 border border-slate-200 p-3.5 space-y-2 text-xs">
+          <div className="flex justify-between items-center">
+            <span className="text-slate-600">
+  Standard Customer Supply Rate:</span>
+            <strong className="text-sm font-bold text-emerald-600">
+  Rs {calculatedSupplyRate} / kg
+            </strong>
+          </div>
+        </div>
+      )}
 
-      <div className="p-3 rounded-lg bg-bg text-xs flex justify-between items-center border border-border">
-        <span className="text-text-secondary">Calculated Supply Rate:</span>
-        <strong className="text-green-500 text-sm">
-          Rs {calculatedSupplyRate.toFixed(0)} / kg
-        </strong>
-      </div>
-
-      <div className="flex gap-3 mt-2">
+      <div className="flex gap-3 justify-end mt-2">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-      className="w-1/3 py-2.5 px-4 rounded-lg cursor-pointer border border-border bg-transparent text-text-secondary hover:bg-bg transition-colors"
-    >
-      Cancel
-    </button>
-  )}
-  <button
-    type="submit"
-    disabled={submitting}
-    className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11"
-  >
-    {submitting ? 'Saving...' : 'Save Rate'}
-  </button>
-</div>
+            disabled={submitting}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+          >
+  Cancel</button>
+        )}
+        <button
+          type="submit"
+          disabled={submitting || !farmRate}
+          className="rounded-lg bg-blue-600 hover:bg-blue-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 min-h-11 flex-1"
+        >
+          {submitting ? 'Saving...' : 'Save Daily Rate'}
+        </button>
+      </div>
     </form>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { api } from '@/lib/api-client'
 
 export interface DailyRateData {
   id: string
@@ -18,10 +19,9 @@ export function useDailyRate() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch('/api/daily-rate')
-      const json = await res.json()
-      if (json.success && json.data) {
-        setDailyRate(json.data)
+      const res = await api.getDailyRate()
+      if (res.success && res.data) {
+        setDailyRate(res.data as DailyRateData)
       } else {
         setDailyRate(null)
       }
@@ -39,17 +39,12 @@ export function useDailyRate() {
   const updateDailyRate = async (farmRate: number, supplierPremium: number = 4) => {
     try {
       setError(null)
-      const res = await fetch('/api/daily-rate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ farmRate, supplierPremium }),
-      })
-      const json = await res.json()
-      if (json.success && json.data) {
-        setDailyRate(json.data)
-        return { success: true, data: json.data }
+      const res = await api.updateDailyRate(farmRate, supplierPremium)
+      if (res.success && res.data) {
+        setDailyRate(res.data as DailyRateData)
+        return { success: true, data: res.data as DailyRateData }
       } else {
-        const err = json.error || 'Rate update fail hua'
+        const err = res.error || 'Rate update fail hua'
         setError(err)
         return { success: false, error: err }
       }

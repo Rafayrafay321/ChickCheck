@@ -40,12 +40,31 @@ export interface DailyRateInput {
   supplierPremium?: number
 }
 
+export interface SupplierInput {
+  name: string
+  phone?: string
+  address?: string
+  ratePremium?: number
+}
+
+export interface SupplierPaymentInput {
+  supplierId: string
+  amount: number
+  method?: 'CASH' | 'JAZZCASH' | 'EASYPAISA' | 'BANK'
+  note?: string
+}
+
 export interface SupplierPurchaseInput {
+  supplierId?: string
   supplierName: string
   grossWeight: number
   dudWeight?: number
   ratePerKg?: number
   cashPaid?: number
+}
+
+export interface BatchSupplierPurchaseInput {
+  items: SupplierPurchaseInput[]
 }
 
 export interface CustomerMultiplierInput {
